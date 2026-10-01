@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0b0f14"/>
+<title>14-Day Football Program</title>
+<style>
+:root{--bg:#0b0f14;--card:#161c24;--border:#222b36;--text:#f5f7fa;--muted:#8a94a6;--accent:#2563eb;--accent-bright:#3b82f6;--am:#38bdf8;--radius:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
+body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
+.header{position:sticky;top:0;z-index:20;background:rgba(11,15,20,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:16px 18px 12px}
+.header h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.4px}
+.header p{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.wrap{padding:16px 16px 8px}
+.screen{display:none}
+.screen.active{display:block}
+.daynav{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:16px}
+.daynav button{background:#0e141b;color:var(--text);border:1px solid var(--border);width:40px;height:40px;border-radius:12px;font-size:20px;cursor:pointer}
+.daylabel{text-align:center}
+.daylabel .d{font-size:15px;font-weight:700}
+.daylabel .t{font-size:12px;color:var(--muted)}
+.rest-pill{display:inline-block;margin-top:2px;font-size:10px;font-weight:700;color:var(--am);border:1px solid var(--border);border-radius:20px;padding:2px 8px}
+.ringcard{display:flex;align-items:center;gap:18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.ring{position:relative;width:96px;height:96px;flex:0 0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .pct b{font-size:22px;font-weight:800}
+.ring .pct span{font-size:10px;color:var(--muted)}
+.ringinfo h2{margin:0 0 4px;font-size:16px}
+.ringinfo p{margin:0;font-size:12.5px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 4px;margin-bottom:14px}
+.cardhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cardhead .dot{width:10px;height:10px;border-radius:50%}
+.cardhead h3{margin:0;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.cardhead .count{margin-left:auto;font-size:12px;color:var(--muted)}
+.card.am .dot{background:var(--am)}
+.card.am h3{color:var(--am)}
+.card.pm .dot{background:var(--accent-bright)}
+.card.pm h3{color:var(--accent-bright)}
+.task{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--border);cursor:pointer}
+.task:first-of-type{border-top:none}
+.task .box{width:22px;height:22px;flex:0 0 auto;border-radius:7px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+.task.done .box{background:var(--accent);border-color:var(--accent)}
+.task .label{font-size:14px;line-height:1.3}
+.task.done .label{text-decoration:line-through;color:var(--muted)}
+.actions{display:flex;gap:10px;margin:4px 0 20px}
+.actions button{flex:1;padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-ghost{background:transparent;color:var(--muted)}
+.checkcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 4px;margin-bottom:14px}
+.checkcard h3{margin:0 0 6px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.weighrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.weighrow label{font-size:13px;color:var(--muted);flex:1}
+.weighrow input{width:92px;background:#0e141b;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:9px 10px;font-size:15px;text-align:right}
+.planrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.planrow .num{width:34px;height:34px;flex:0 0 auto;border-radius:10px;background:#0e141b;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.planrow .mid{flex:1;min-width:0}
+.planrow .mid .pt{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.planrow .mid .pw{font-size:11px;color:var(--muted);margin-top:2px}
+.bar{height:6px;background:#0e141b;border-radius:6px;margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent-bright);border-radius:6px;transition:width .3s}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;background:rgba(11,15,20,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border)}
+.nav button{flex:1;background:none;border:none;color:var(--muted);padding:12px 0 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav button .ic{font-size:19px}
+.nav button.active{color:var(--accent-bright)}
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header class="header">
+  <h1>14-Day Football Program</h1>
+  <p>Naoufal · 82.5 → 78.5 kg · 2× daily</p>
+</header>
+<main>
+  <section id="today" class="screen active">
+    <div class="wrap">
+      <div class="daynav">
+        <button id="prevDay">‹</button>
+        <div class="daylabel">
+          <div class="d" id="dayNumLbl">Day 1</div>
+          <div class="t" id="dayTitleLbl">—</div>
+          <div id="restLbl"></div>
+        </div>
+        <button id="nextDay">›</button>
+      </div>
+      <div class="ringcard">
+        <div class="ring">
+          <svg width="96" height="96">
+            <circle cx="48" cy="48" r="42" fill="none" stroke="#222b36" stroke-width="8"></circle>
+            <circle id="ringArc" cx="48" cy="48" r="42" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"></circle>
+          </svg>
+          <div class="pct"><b id="ringPct">0%</b><span>done</span></div>
+        </div>
+        <div class="ringinfo">
+          <h2 id="ringTitle">Today</h2>
+          <p id="ringSub">0 of 0 tasks complete</p>
+        </div>
+      </div>
+      <div id="amCard"></div>
+      <div id="pmCard"></div>
+      <div class="actions">
+        <button class="btn-primary" id="markAll">Mark all done</button>
+        <button class="btn-ghost" id="resetDay">Reset day</button>
+      </div>
+      <div class="weighrow">
+        <label>Weight today (kg)</label>
+        <input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="—"/>
+      </div>
+      <div class="checkcard">
+        <h3>Daily checklist</h3>
+        <div id="checklist"></div>
+      </div>
+    </div>
+  </section>
+  <section id="plan" class="screen">
+    <div class="wrap">
+      <div id="planList"></div>
+    </div>
+  </section>
+</main>
+<nav class="nav">
+  <button id="tabToday" class="active"><span class="ic">◉</span>Today</button>
+  <button id="tabPlan"><span class="ic">▤</span>Plan</button>
+</nav>
+<div class="toast" id="toast"></div>
+<script>
+const CHECK_ITEMS=['Hit protein (185g) first','3–4 L water + electrolytes','Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged weight & how I feel'];
+const WEEK=d=>d<=6?1:(d<=13?2:3);
+let S={days:[],task_progress:[],weights:[],checklist:[]};
+let cur=1;
+const $=id=>document.getElementById(id);
+const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:undefined).then(r=>r.json());
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1400);}
+function parseTasks(t){if(Array.isArray(t))return t;try{return JSON.parse(t||'[]');}catch(e){return [];}}
+function dayData(n){return S.days.find(d=>d.day_num===n)||{day_num:n,title:'',am_tasks:[],pm_tasks:[],is_rest:false,week:WEEK(n)};}
+function taskDone(n,s,i){const r=S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);return r?r.done:false;}
+function checkDone(n,i){const r=S.checklist.find(c=>c.day_num===n&&c.item_index===i);return r?r.done:false;}
+function dayCompletion(n){const d=dayData(n);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);const total=am.length+pm.length;if(!total)return {done:0,total:0,pct:0};let done=0;am.forEach((_,i)=>{if(taskDone(n,'am',i))done++;});pm.forEach((_,i)=>{if(taskDone(n,'pm',i))done++;});return {done,total,pct:Math.round(done/total*100)};}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderCard(n,sess,tasks){
+  const cls=sess==='am'?'am':'pm';
+  const title=sess==='am'?'Morning':'Evening';
+  let done=0;tasks.forEach((_,i)=>{if(taskDone(n,sess,i))done++;});
+  let h='<div class="card '+cls+'"><div class="cardhead"><span class="dot"></span><h3>'+title+'</h3><span class="count">'+done+'/'+tasks.length+'</span></div>';
+  tasks.forEach((t,i)=>{
+    const dn=taskDone(n,sess,i);
+    h+='<div class="task'+(dn?' done':'')+'" data-sess="'+sess+'" data-i="'+i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(t)+'</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+function upsertTP(n,s,i,dn){const r=S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);if(r)r.done=dn;else S.task_progress.push({day_num:n,session:s,task_index:i,done:dn});}
+function upsertCK(n,i,dn){const r=S.checklist.find(c=>c.day_num===n&&c.item_index===i);if(r)r.done=dn;else S.checklist.push({day_num:n,item_index:i,done:dn});}
+function setTask(n,s,i,dn){upsertTP(n,s,i,dn);renderToday();api('/api/task',{day_num:n,session:s,task_index:i,done:dn}).catch(()=>toast('Save failed'));}
+function setCheck(n,i,dn){upsertCK(n,i,dn);renderChecklist();api('/api/checklist',{day_num:n,item_index:i,done:dn}).catch(()=>toast('Save failed'));}
+function bindTasks(){
+  document.querySelectorAll('#amCard .task,#pmCard .task').forEach(el=>{
+    el.onclick=()=>{const s=el.dataset.sess;const i=+el.dataset.i;setTask(cur,s,i,!taskDone(cur,s,i));};
+  });
+}
+function renderChecklist(){
+  let h='';
+  CHECK_ITEMS.forEach((it,i)=>{
+    const dn=checkDone(cur,i);
+    h+='<div class="task'+(dn?' done':'')+'" data-chk="'+i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(it)+'</div></div>';
+  });
+  $('checklist').innerHTML=h;
+  $('checklist').querySelectorAll('[data-chk]').forEach(el=>{
+    el.onclick=()=>{const i=+el.dataset.chk;setCheck(cur,i,!checkDone(cur,i));};
+  });
+}
+function renderToday(){
+  const d=dayData(cur);
+  const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
+  $('dayNumLbl').textContent='Day '+cur;
+  $('dayTitleLbl').textContent=d.title||'';
+  $('restLbl').innerHTML=d.is_rest?'<span class="rest-pill">REST DAY</span>':'';
+  const c=dayCompletion(cur);
+  $('ringPct').textContent=c.pct+'%';
+  $('ringTitle').textContent=d.title||('Day '+cur);
+  $('ringSub').textContent=c.done+' of '+c.total+' tasks complete';
+  $('ringArc').style.strokeDashoffset=264-264*(c.pct/100);
+  $('amCard').innerHTML=renderCard(cur,'am',am);
+  $('pmCard').innerHTML=renderCard(cur,'pm',pm);
+  bindTasks();
+  const w=S.weights.find(x=>x.day_num===cur);
+  $('weightInput').value=w?w.weight_kg:'';
+  renderChecklist();
+}
+function renderPlan(){
+  let h='';
+  for(let n=1;n<=14;n++){
+    const d=dayData(n);
+    const c=dayCompletion(n);
+    h+='<div class="planrow" data-day="'+n+'"><div class="num">'+n+'</div><div class="mid"><div class="pt">'+esc(d.title||('Day '+n))+'</div><div class="pw">Week '+(d.week||WEEK(n))+(d.is_rest?' · Rest day':'')+' · '+c.done+'/'+c.total+'</div><div class="bar"><i style="width:'+c.pct+'%"></i></div></div></div>';
+  }
+  $('planList').innerHTML=h;
+  $('planList').querySelectorAll('[data-day]').forEach(el=>{
+    el.onclick=()=>{cur=+el.dataset.day;showTab('today');renderToday();window.scrollTo(0,0);};
+  });
+}
+function showTab(t){
+  $('today').classList.toggle('active',t==='today');
+  $('plan').classList.toggle('active',t==='plan');
+  $('tabToday').classList.toggle('active',t==='today');
+  $('tabPlan').classList.toggle('active',t==='plan');
+  if(t==='plan')renderPlan();
+}
+function markAll(){
+  const d=dayData(cur);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
+  am.forEach((_,i)=>{if(!taskDone(cur,'am',i)){upsertTP(cur,'am',i,true);api('/api/task',{day_num:cur,session:'am',task_index:i,done:true});}});
+  pm.forEach((_,i)=>{if(!taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,true);api('/api/task',{day_num:cur,session:'pm',task_index:i,done:true});}});
+  renderToday();toast('All tasks marked done');
+}
+function resetDay(){
+  const d=dayData(cur);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
+  am.forEach((_,i)=>{if(taskDone(cur,'am',i)){upsertTP(cur,'am',i,false);api('/api/task',{day_num:cur,session:'am',task_index:i,done:false});}});
+  pm.forEach((_,i)=>{if(taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,false);api('/api/task',{day_num:cur,session:'pm',task_index:i,done:false});}});
+  renderToday();toast('Day reset');
+}
+function saveWeight(){
+  const v=parseFloat($('weightInput').value);
+  if(isNaN(v))return;
+  const w=S.weights.find(x=>x.day_num===cur);
+  if(w)w.weight_kg=v;else S.weights.push({day_num:cur,weight_kg:v});
+  api('/api/weight',{day_num:cur,weight_kg:v}).then(()=>toast('Weight saved')).catch(()=>toast('Save failed'));
+}
+$('prevDay').onclick=()=>{if(cur>1){cur--;renderToday();}};
+$('nextDay').onclick=()=>{if(cur<14){cur++;renderToday();}};
+$('markAll').onclick=markAll;
+$('resetDay').onclick=resetDay;
+$('weightInput').onchange=saveWeight;
+$('tabToday').onclick=()=>showTab('today');
+$('tabPlan').onclick=()=>showTab('plan');
+async function init(){
+  try{
+    const data=await api('/api/state');
+    if(data&&data.days){S=data;}
+  }catch(e){toast('Could not load data');}
+  renderToday();
+}
+init();
+</script>
+</body>
+</html>
