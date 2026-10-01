@@ -183,10 +183,10 @@ function checkDone(n,i){const r=S.checklist.find(c=>c.day_num===n&&c.item_index=
 function dayCompletion(n){const d=dayData(n);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);const total=am.length+pm.length;if(!total)return {done:0,total:0,pct:0};let done=0;am.forEach((_,i)=>{if(taskDone(n,'am',i))done++;});pm.forEach((_,i)=>{if(taskDone(n,'pm',i))done++;});return {done,total,pct:Math.round(done/total*100)};}
 function computeToday(){
 if(!S.cycle||!S.cycle.start_date){todayDay=1;return;}
-const start=new Date(S.cycle.start_date+'T00:00:00');
+const start=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
 const now=new Date();now.setHours(0,0,0,0);
 const diff=Math.floor((now-start)/86400000);
-todayDay=diff<0?1:(diff>13?14:diff+1);
+todayDay=(isNaN(diff)||diff<0)?1:(diff>13?14:diff+1);
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function renderCard(n,sess,tasks){
@@ -281,7 +281,7 @@ s.per.forEach(p=>{h+='<div class="sline"><span>'+esc(dayName(p.n))+'</span><span
 $('sBreak').innerHTML=h;
 let hh='';
 if(!S.history||!S.history.length){hh='<div class="sline"><span style="color:var(--muted)">No finished cycles yet</span><span></span></div>';}
-else{S.history.forEach(c=>{const sm=c.summary||{};hh+='<div class="sline"><span>Cycle '+c.cycle_num+' · '+(c.start_date||'')+'</span><span>'+(sm.pct!=null?sm.pct+'%':'—')+'</span></div>';});}
+else{S.history.forEach(c=>{const sm=c.summary||{};hh+='<div class="sline"><span>Cycle '+c.cycle_num+' · '+String(c.start_date||'').slice(0,10)+'</span><span>'+(sm.pct!=null?sm.pct+'%':'—')+'</span></div>';});}
 $('histList').innerHTML=hh;
 }
 function showTab(t){
@@ -337,7 +337,7 @@ if(data&&data.days){S=data;}
 }catch(e){toast('Could not load data');}
 computeToday();
 cur=todayDay;
-if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+S.cycle.start_date;}
+if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
 renderToday();
 }
 init();
