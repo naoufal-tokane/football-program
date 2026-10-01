@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
 <meta name="theme-color" content="#0b0f14"/>
-<title>14-Day Football Program</title>
+<title>Football Program</title>
 <style>
 :root{--bg:#0b0f14;--card:#161c24;--border:#222b36;--text:#f5f7fa;--muted:#8a94a6;--accent:#2563eb;--accent-bright:#3b82f6;--am:#38bdf8;--radius:16px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -21,7 +21,9 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 .daylabel{text-align:center}
 .daylabel .d{font-size:15px;font-weight:700}
 .daylabel .t{font-size:12px;color:var(--muted)}
-.rest-pill{display:inline-block;margin-top:2px;font-size:10px;font-weight:700;color:var(--am);border:1px solid var(--border);border-radius:20px;padding:2px 8px}
+.rest-pill,.today-pill{display:inline-block;margin-top:2px;font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px}
+.rest-pill{color:var(--am);border:1px solid var(--border)}
+.today-pill{color:#fff;background:var(--accent);margin-left:6px}
 .ringcard{display:flex;align-items:center;gap:18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
 .ring{position:relative;width:96px;height:96px;flex:0 0 auto}
 .ring svg{transform:rotate(-90deg)}
@@ -51,13 +53,25 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 .btn-ghost{background:transparent;color:var(--muted)}
 .checkcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 4px;margin-bottom:14px}
 .checkcard h3{margin:0 0 6px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.weighrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.weighrow label{font-size:13px;color:var(--muted);flex:1}
+.weighrow input{width:92px;background:#0e141b;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:9px 10px;font-size:15px;text-align:right}
 .planrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;cursor:pointer}
 .planrow .num{width:52px;height:34px;flex:0 0 auto;border-radius:10px;background:#0e141b;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.planrow.istoday{border-color:var(--accent)}
 .planrow .mid{flex:1;min-width:0}
 .planrow .mid .pt{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .planrow .mid .pw{font-size:11px;color:var(--muted);margin-top:2px}
 .bar{height:6px;background:#0e141b;border-radius:6px;margin-top:7px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent-bright);border-radius:6px;transition:width .3s}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat .v{font-size:22px;font-weight:800}
+.stat .k{font-size:11px;color:var(--muted);margin-top:2px}
+.sumcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.sumcard h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.sline{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--border)}
+.sline:first-of-type{border-top:none}
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;background:rgba(11,15,20,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border)}
 .nav button{flex:1;background:none;border:none;color:var(--muted);padding:12px 0 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .ic{font-size:19px}
@@ -68,8 +82,8 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 </head>
 <body>
 <header class="header">
-<h1>14-Day Football Program</h1>
-<p>Naoufal · 2 weeks · 2× daily</p>
+<h1>Football Program</h1>
+<p id="subHdr">Naoufal · 2-week cycle</p>
 </header>
 <main>
 <section id="today" class="screen active">
@@ -102,6 +116,10 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 <button class="btn-primary" id="markAll">Mark all done</button>
 <button class="btn-ghost" id="resetDay">Reset day</button>
 </div>
+<div class="weighrow">
+<label>Weight today (kg)</label>
+<input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="—"/>
+</div>
 <div class="checkcard">
 <h3>Daily checklist</h3>
 <div id="checklist"></div>
@@ -113,10 +131,38 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 <div id="planList"></div>
 </div>
 </section>
+<section id="summary" class="screen">
+<div class="wrap">
+<div class="statgrid">
+<div class="stat"><div class="v" id="sPct">0%</div><div class="k">Overall completion</div></div>
+<div class="stat"><div class="v" id="sTasks">0/0</div><div class="k">Tasks done</div></div>
+<div class="stat"><div class="v" id="sBest">—</div><div class="k">Best day</div></div>
+<div class="stat"><div class="v" id="sWorst">—</div><div class="k">Worst day</div></div>
+</div>
+<div class="sumcard">
+<h3>Weight progress</h3>
+<div class="sline"><span>Start</span><span id="wStart">—</span></div>
+<div class="sline"><span>Latest</span><span id="wEnd">—</span></div>
+<div class="sline"><span>Change</span><span id="wDelta">—</span></div>
+</div>
+<div class="sumcard">
+<h3>Per-day breakdown</h3>
+<div id="sBreak"></div>
+</div>
+<div class="actions">
+<button class="btn-primary" id="finishCycle">Finish cycle · Start new</button>
+</div>
+<div class="sumcard">
+<h3>History</h3>
+<div id="histList"></div>
+</div>
+</div>
+</section>
 </main>
 <nav class="nav">
 <button id="tabToday" class="active"><span class="ic">◉</span>Today</button>
 <button id="tabPlan"><span class="ic">▤</span>Plan</button>
+<button id="tabSummary"><span class="ic">▣</span>Summary</button>
 </nav>
 <div class="toast" id="toast"></div>
 <script>
@@ -124,16 +170,24 @@ const DOW=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday
 const dayName=n=>DOW[(n-1)%7]+(n>7?' (wk2)':'');
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
-let S={days:[],task_progress:[],weights:[],checklist:[]};
-let cur=1;
+let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[]};
+let cur=1, todayDay=1;
 const $=id=>document.getElementById(id);
 const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:undefined).then(r=>r.json());
+function cid(){return S.cycle?S.cycle.id:0;}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1400);}
 function parseTasks(t){if(Array.isArray(t))return t;try{return JSON.parse(t||'[]');}catch(e){return [];}}
 function dayData(n){return S.days.find(d=>d.day_num===n)||{day_num:n,title:'',am_tasks:[],pm_tasks:[],is_rest:false,week:WEEK(n)};}
 function taskDone(n,s,i){const r=S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);return r?r.done:false;}
 function checkDone(n,i){const r=S.checklist.find(c=>c.day_num===n&&c.item_index===i);return r?r.done:false;}
 function dayCompletion(n){const d=dayData(n);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);const total=am.length+pm.length;if(!total)return {done:0,total:0,pct:0};let done=0;am.forEach((_,i)=>{if(taskDone(n,'am',i))done++;});pm.forEach((_,i)=>{if(taskDone(n,'pm',i))done++;});return {done,total,pct:Math.round(done/total*100)};}
+function computeToday(){
+if(!S.cycle||!S.cycle.start_date){todayDay=1;return;}
+const start=new Date(S.cycle.start_date+'T00:00:00');
+const now=new Date();now.setHours(0,0,0,0);
+const diff=Math.floor((now-start)/86400000);
+todayDay=diff<0?1:(diff>13?14:diff+1);
+}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function renderCard(n,sess,tasks){
 const cls=sess==='am'?'am':'pm';
@@ -149,8 +203,8 @@ return h;
 }
 function upsertTP(n,s,i,dn){const r=S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);if(r)r.done=dn;else S.task_progress.push({day_num:n,session:s,task_index:i,done:dn});}
 function upsertCK(n,i,dn){const r=S.checklist.find(c=>c.day_num===n&&c.item_index===i);if(r)r.done=dn;else S.checklist.push({day_num:n,item_index:i,done:dn});}
-function setTask(n,s,i,dn){upsertTP(n,s,i,dn);renderToday();api('/api/task',{day_num:n,session:s,task_index:i,done:dn}).catch(()=>toast('Save failed'));}
-function setCheck(n,i,dn){upsertCK(n,i,dn);renderChecklist();api('/api/checklist',{day_num:n,item_index:i,done:dn}).catch(()=>toast('Save failed'));}
+function setTask(n,s,i,dn){upsertTP(n,s,i,dn);renderToday();api('/api/task',{cycle_id:cid(),day_num:n,session:s,task_index:i,done:dn}).catch(()=>toast('Save failed'));}
+function setCheck(n,i,dn){upsertCK(n,i,dn);renderChecklist();api('/api/checklist',{cycle_id:cid(),day_num:n,item_index:i,done:dn}).catch(()=>toast('Save failed'));}
 function bindTasks(){
 document.querySelectorAll('#amCard .task,#pmCard .task').forEach(el=>{
 el.onclick=()=>{const s=el.dataset.sess;const i=+el.dataset.i;setTask(cur,s,i,!taskDone(cur,s,i));};
@@ -172,7 +226,9 @@ const d=dayData(cur);
 const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
 $('dayNumLbl').textContent=dayName(cur);
 $('dayTitleLbl').textContent=d.title||'';
-$('restLbl').innerHTML=d.is_rest?'<span class="rest-pill">REST DAY</span>':'';
+let pills=d.is_rest?'<span class="rest-pill">REST DAY</span>':'';
+if(cur===todayDay)pills+='<span class="today-pill">TODAY</span>';
+$('restLbl').innerHTML=pills;
 const c=dayCompletion(cur);
 $('ringPct').textContent=c.pct+'%';
 $('ringTitle').textContent=d.title||dayName(cur);
@@ -181,6 +237,8 @@ $('ringArc').style.strokeDashoffset=264-264*(c.pct/100);
 $('amCard').innerHTML=renderCard(cur,'am',am);
 $('pmCard').innerHTML=renderCard(cur,'pm',pm);
 bindTasks();
+const w=S.weights.find(x=>x.day_num===cur);
+$('weightInput').value=w?w.weight_kg:'';
 renderChecklist();
 }
 function renderPlan(){
@@ -188,43 +246,98 @@ let h='';
 for(let n=1;n<=14;n++){
 const d=dayData(n);
 const c=dayCompletion(n);
-h+='<div class="planrow" data-day="'+n+'"><div class="num">'+esc(dayName(n))+'</div><div class="mid"><div class="pt">'+esc(d.title||dayName(n))+'</div><div class="pw">Week '+(d.week||WEEK(n))+(d.is_rest?' · Rest day':'')+' · '+c.done+'/'+c.total+'</div><div class="bar"><i style="width:'+c.pct+'%"></i></div></div></div>';
+h+='<div class="planrow'+(n===todayDay?' istoday':'')+'" data-day="'+n+'"><div class="num">'+esc(dayName(n))+'</div><div class="mid"><div class="pt">'+esc(d.title||dayName(n))+(n===todayDay?' · TODAY':'')+'</div><div class="pw">Week '+(d.week||WEEK(n))+(d.is_rest?' · Rest day':'')+' · '+c.done+'/'+c.total+'</div><div class="bar"><i style="width:'+c.pct+'%"></i></div></div></div>';
 }
 $('planList').innerHTML=h;
 $('planList').querySelectorAll('[data-day]').forEach(el=>{
 el.onclick=()=>{cur=+el.dataset.day;showTab('today');renderToday();window.scrollTo(0,0);};
 });
 }
+function computeSummary(){
+let done=0,total=0,best={n:0,pct:-1},worst={n:0,pct:101};
+const per=[];
+for(let n=1;n<=14;n++){
+const c=dayCompletion(n);
+done+=c.done;total+=c.total;
+per.push({n,pct:c.pct,done:c.done,total:c.total});
+if(c.total){if(c.pct>best.pct)best={n,pct:c.pct};if(c.pct<worst.pct)worst={n,pct:c.pct};}
+}
+const ws=S.weights.slice().sort((a,b)=>a.day_num-b.day_num);
+const wStart=ws.length?+ws[0].weight_kg:null;
+const wEnd=ws.length?+ws[ws.length-1].weight_kg:null;
+return {pct:total?Math.round(done/total*100):0,done,total,best,worst,per,wStart,wEnd};
+}
+function renderSummary(){
+const s=computeSummary();
+$('sPct').textContent=s.pct+'%';
+$('sTasks').textContent=s.done+'/'+s.total;
+$('sBest').textContent=s.best.pct>=0?dayName(s.best.n)+' ·'+s.best.pct+'%':'—';
+$('sWorst').textContent=s.worst.pct<=100?dayName(s.worst.n)+' ·'+s.worst.pct+'%':'—';
+$('wStart').textContent=s.wStart!=null?s.wStart+' kg':'—';
+$('wEnd').textContent=s.wEnd!=null?s.wEnd+' kg':'—';
+$('wDelta').textContent=(s.wStart!=null&&s.wEnd!=null)?((s.wEnd-s.wStart>=0?'+':'')+(s.wEnd-s.wStart).toFixed(1)+' kg'):'—';
+let h='';
+s.per.forEach(p=>{h+='<div class="sline"><span>'+esc(dayName(p.n))+'</span><span>'+p.done+'/'+p.total+' · '+p.pct+'%</span></div>';});
+$('sBreak').innerHTML=h;
+let hh='';
+if(!S.history||!S.history.length){hh='<div class="sline"><span style="color:var(--muted)">No finished cycles yet</span><span></span></div>';}
+else{S.history.forEach(c=>{const sm=c.summary||{};hh+='<div class="sline"><span>Cycle '+c.cycle_num+' · '+(c.start_date||'')+'</span><span>'+(sm.pct!=null?sm.pct+'%':'—')+'</span></div>';});}
+$('histList').innerHTML=hh;
+}
 function showTab(t){
-$('today').classList.toggle('active',t==='today');
-$('plan').classList.toggle('active',t==='plan');
+['today','plan','summary'].forEach(x=>$(x).classList.toggle('active',t===x));
 $('tabToday').classList.toggle('active',t==='today');
 $('tabPlan').classList.toggle('active',t==='plan');
+$('tabSummary').classList.toggle('active',t==='summary');
 if(t==='plan')renderPlan();
+if(t==='summary')renderSummary();
 }
 function markAll(){
 const d=dayData(cur);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
-am.forEach((_,i)=>{if(!taskDone(cur,'am',i)){upsertTP(cur,'am',i,true);api('/api/task',{day_num:cur,session:'am',task_index:i,done:true});}});
-pm.forEach((_,i)=>{if(!taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,true);api('/api/task',{day_num:cur,session:'pm',task_index:i,done:true});}});
+am.forEach((_,i)=>{if(!taskDone(cur,'am',i)){upsertTP(cur,'am',i,true);api('/api/task',{cycle_id:cid(),day_num:cur,session:'am',task_index:i,done:true});}});
+pm.forEach((_,i)=>{if(!taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,true);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:true});}});
 renderToday();toast('All tasks marked done');
 }
 function resetDay(){
 const d=dayData(cur);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
-am.forEach((_,i)=>{if(taskDone(cur,'am',i)){upsertTP(cur,'am',i,false);api('/api/task',{day_num:cur,session:'am',task_index:i,done:false});}});
-pm.forEach((_,i)=>{if(taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,false);api('/api/task',{day_num:cur,session:'pm',task_index:i,done:false});}});
+am.forEach((_,i)=>{if(taskDone(cur,'am',i)){upsertTP(cur,'am',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'am',task_index:i,done:false});}});
+pm.forEach((_,i)=>{if(taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:false});}});
 renderToday();toast('Day reset');
+}
+function saveWeight(){
+const v=parseFloat($('weightInput').value);
+if(isNaN(v))return;
+const w=S.weights.find(x=>x.day_num===cur);
+if(w)w.weight_kg=v;else S.weights.push({day_num:cur,weight_kg:v});
+api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weight saved')).catch(()=>toast('Save failed'));
+}
+async function finishCycle(){
+const s=computeSummary();
+if(!confirm('Finish this cycle and start a new one? Your progress will be archived and the forms reset.'))return;
+const summary={pct:s.pct,done:s.done,total:s.total,best:s.best,worst:s.worst,wStart:s.wStart,wEnd:s.wEnd};
+try{
+const r=await api('/api/finish-cycle',{cycle_id:cid(),summary});
+if(r&&r.ok){toast('Cycle archived · new cycle started');await init();showTab('today');}
+else toast('Could not finish cycle');
+}catch(e){toast('Could not finish cycle');}
 }
 $('prevDay').onclick=()=>{if(cur>1){cur--;renderToday();}};
 $('nextDay').onclick=()=>{if(cur<14){cur++;renderToday();}};
 $('markAll').onclick=markAll;
 $('resetDay').onclick=resetDay;
+$('weightInput').onchange=saveWeight;
+$('finishCycle').onclick=finishCycle;
 $('tabToday').onclick=()=>showTab('today');
 $('tabPlan').onclick=()=>showTab('plan');
+$('tabSummary').onclick=()=>showTab('summary');
 async function init(){
 try{
 const data=await api('/api/state');
 if(data&&data.days){S=data;}
 }catch(e){toast('Could not load data');}
+computeToday();
+cur=todayDay;
+if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+S.cycle.start_date;}
 renderToday();
 }
 init();
