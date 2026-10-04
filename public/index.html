@@ -88,12 +88,12 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .nav button{flex:1;background:none;border:none;color:var(--muted);padding:12px 0 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .ic{font-size:19px}
 .nav button.active{color:var(--accent-bright)}
-.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+.authwrap{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}.authcard{width:100%;max-width:360px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}.authcard h2{margin:0 0 4px;font-size:20px;font-weight:800}.authcard p.sub{margin:0 0 18px;font-size:13px;color:var(--muted)}.authcard label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}.authcard input{width:100%;background:#0e141b;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 12px;font-size:15px}.authcard button.primary{width:100%;margin-top:18px;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;border:1px solid var(--accent)}.authcard .err{color:#f87171;font-size:12.5px;margin-top:12px;min-height:16px}.authcard .toggle{margin-top:16px;font-size:13px;color:var(--muted);text-align:center}.authcard .toggle a{color:var(--accent-bright);cursor:pointer;font-weight:700}.logoutbtn{position:absolute;top:16px;right:16px;background:#0e141b;color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
 .toast.show{opacity:1}
 </style>
 </head>
 <body>
-<header class="header">
+<div id="authWrap" class="authwrap" style="display:none"><div class="authcard"><h2 id="authTitle">Welcome back</h2><p class="sub" id="authSub">Log in to your Football Program</p><label>Email</label><input type="email" id="authEmail" autocomplete="email" placeholder="you@example.com"><label>Password</label><input type="password" id="authPassword" autocomplete="current-password" placeholder="At least 8 characters"><button class="primary" id="authSubmit">Log in</button><div class="err" id="authErr"></div><div class="toggle" id="authToggle">New here? <a id="authSwitch">Create an account</a></div></div></div><header class="header"><button class="logoutbtn" id="logoutBtn" style="display:none">Log out</button>
 <h1>Football Program</h1>
 <p id="subHdr">Naoufal · 2-week cycle</p>
 </header>
@@ -397,11 +397,11 @@ api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weig
   $('finishCycle').onclick=finishCycle;
   $('tabToday').onclick=()=>showTab('today');
   $('tabPlan').onclick=()=>showTab('plan');
-  $('tabSummary').onclick=()=>showTab('summary');$('tabFuel').onclick=()=>showTab('fuel');$('saveGoals').onclick=saveGoals;
-  async function init(){
+  $('tabSummary').onclick=()=>showTab('summary');$('tabFuel').onclick=()=>showTab('fuel');$('saveGoals').onclick=saveGoals;$('authSubmit').onclick=submitAuth;$('logoutBtn').onclick=logout;$('authPassword').addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth();});setAuthMode('login');
+  let authMode='login';function showAuth(){$('authWrap').style.display='flex';$('logoutBtn').style.display='none';}function hideAuth(){$('authWrap').style.display='none';$('logoutBtn').style.display='block';}function setAuthMode(m){authMode=m;$('authTitle').textContent=m==='login'?'Welcome back':'Create your account';$('authSub').textContent=m==='login'?'Log in to your Football Program':'Start your own Football Program';$('authSubmit').textContent=m==='login'?'Log in':'Create account';$('authPassword').setAttribute('autocomplete',m==='login'?'current-password':'new-password');$('authToggle').innerHTML=m==='login'?'New here? <a id="authSwitch">Create an account</a>':'Have an account? <a id="authSwitch">Log in</a>';$('authSwitch').onclick=()=>{setAuthMode(authMode==='login'?'signup':'login');$('authErr').textContent='';};}async function submitAuth(){const email=$('authEmail').value.trim();const password=$('authPassword').value;$('authErr').textContent='';if(!email||!password){$('authErr').textContent='Please enter email and password';return;}$('authSubmit').disabled=true;try{const r=await fetch('/api/auth/'+(authMode==='login'?'login':'signup'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json();if(!r.ok){$('authErr').textContent=d.error||'Something went wrong';}else{$('authPassword').value='';hideAuth();await init();showTab('today');}}catch(e){$('authErr').textContent='Network error';}$('authSubmit').disabled=false;}async function logout(){try{await fetch('/api/auth/logout',{method:'POST'});}catch(e){}location.reload();}async function init(){
     try{
-      const data=await api('/api/state');
-      if(data&&data.days){S=data;}
+      const r=await fetch('/api/state');if(r.status===401){showAuth();return false;}const data=await r.json();
+      if(data&&data.days){S=data;hideAuth();}
     }catch(e){toast('Could not load data');}
     computeToday();
     cur=todayDay;
