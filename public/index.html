@@ -120,10 +120,6 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 <label>Weight today (kg)</label>
 <input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="—"/>
 </div>
-<div class="checkcard">
-<h3>Daily checklist</h3>
-<div id="checklist"></div>
-</div>
 </div>
 </section>
 <section id="plan" class="screen">
@@ -171,9 +167,9 @@ function dayName(n){
   if(S.cycle&&S.cycle.start_date){
     const base=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
     base.setDate(base.getDate()+(n-1));
-    return DOW[base.getDay()]+(n>7?' (wk2)':'');
+    const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return DOW[base.getDay()]+' · '+M[base.getMonth()]+' '+base.getDate();
   }
-  return DOW[((n-1)%7+1)%7]+(n>7?' (wk2)':'');
+  return DOW[((n-1)%7+1)%7];
 }
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
@@ -217,7 +213,7 @@ document.querySelectorAll('#amCard .task,#pmCard .task').forEach(el=>{
 el.onclick=()=>{const s=el.dataset.sess;const i=+el.dataset.i;setTask(cur,s,i,!taskDone(cur,s,i));};
 });
 }
-function renderChecklist(){
+function renderChecklist(){if(!document.getElementById('checklist'))return;
 let h='';
 CHECK_ITEMS.forEach((it,i)=>{
 const dn=checkDone(cur,i);
