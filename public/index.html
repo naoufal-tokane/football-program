@@ -333,11 +333,4 @@ const v=parseFloat($('weightInput').value);
 if(isNaN(v))return;
 const w=S.weights.find(x=>x.day_num===cur);
 if(w)w.weight_kg=v;else S.weights.push({day_num:cur,weight_kg:v});
-api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weight saved')).catch(()=>toast('Save failed'));
-}
-let _weightTimer;
-function saveWeightDebounced(){clearTimeout(_weightTimer);_weightTimer=setTimeout(saveWeight,800);}
-async function finishCycle(){
-const s=computeSummary();
-if(!confirm('Finish this cycle and start a new one? Your progress will be archived and the forms reset.'))return;
-const summary={pct:s.pct,
+api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>
