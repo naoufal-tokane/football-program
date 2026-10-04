@@ -9,8 +9,13 @@ export default async function handler(req, res) {
     if (cycle_id == null) return json(res, 400, { error: 'Invalid payload' });
     const own = await sql`SELECT id FROM cycles WHERE id = ${cycle_id} AND user_id = ${auth.id}`;
     if (!own[0]) return json(res, 403, { error: 'Forbidden' });
-    const rows = await sql`INSERT INTO cycle_goals (cycle_id, protein_g, carbs_g, fats_g, water_ml, calories, updated_at) VALUES (${cycle_id}, ${protein_g}, ${carbs_g}, ${fats_g}, ${water_ml}, ${calories}, now()) ON CONFLICT (cycle_id) DO UPDATE SET protein_g = EXCLUDED.protein_g, carbs_g = EXCLUDED.carbs_g, fats_g = EXCLUDED.fats_g, water_ml = EXCLUDED.water_ml, calories = EXCLUDED.calories, updated_at = now() RETURNING cycle_id, protein_g, carbs_g, fats_g, water_ml, calories`;
-    json(res, 200, { ok: true, row: rows[0] });
+    const updated = await sql`UPDATE cycle_goals SET protein_g = ${protein_g}, carbs_g = ${carbs_g}, fats_g = ${fats_g}, water_ml = ${water_ml}, calories = ${calories}, updated_at = now() WHERE cycle_id = ${cycle_id} RETURNING cycle_id, protein_g, carbs_g, fats_g, water_ml, calories`;
+    let row = updated[0];
+    if (!row) {
+      const inserted = await sql`INSERT INTO cycle_goals (cycle_id, protein_g, carbs_g, fats_g, water_ml, calories, updated_at) VALUES (${cycle_id}, ${protein_g}, ${carbs_g}, ${fats_g}, ${water_ml}, ${calories}, now()) RETURNING cycle_id, protein_g, carbs_g, fats_g, water_ml, calories`;
+      row = inserted[0];
+    }
+    json(res, 200, { ok: true, row });
   } catch (e) {
     json(res, 500, { error: String(e.message || e) });
   }
