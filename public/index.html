@@ -166,8 +166,15 @@ body{max-width:520px;margin:0 auto;padding-bottom:84px;min-height:100vh}
 </nav>
 <div class="toast" id="toast"></div>
 <script>
-const DOW=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const dayName=n=>DOW[(n-1)%7]+(n>7?' (wk2)':'');
+const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function dayName(n){
+  if(S.cycle&&S.cycle.start_date){
+    const base=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
+    base.setDate(base.getDate()+(n-1));
+    return DOW[base.getDay()]+(n>7?' (wk2)':'');
+  }
+  return DOW[((n-1)%7+1)%7]+(n>7?' (wk2)':'');
+}
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
 let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[]};
@@ -324,23 +331,3 @@ else toast('Could not finish cycle');
 $('prevDay').onclick=()=>{if(cur>1){cur--;renderToday();}};
 $('nextDay').onclick=()=>{if(cur<14){cur++;renderToday();}};
 $('markAll').onclick=markAll;
-$('resetDay').onclick=resetDay;
-$('weightInput').onchange=saveWeight;
-$('finishCycle').onclick=finishCycle;
-$('tabToday').onclick=()=>showTab('today');
-$('tabPlan').onclick=()=>showTab('plan');
-$('tabSummary').onclick=()=>showTab('summary');
-async function init(){
-try{
-const data=await api('/api/state');
-if(data&&data.days){S=data;}
-}catch(e){toast('Could not load data');}
-computeToday();
-cur=todayDay;
-if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
-renderToday();
-}
-init();
-</script>
-</body>
-</html>
