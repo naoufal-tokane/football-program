@@ -195,7 +195,7 @@ return DOW[((n-1)%7+1)%7];
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
 const NUTRI=[{k:'protein_g',lbl:'Protein',unit:'g',tgt:160,inp:'inProtein'},{k:'carbs_g',lbl:'Carbs',unit:'g',tgt:300,inp:'inCarbs'},{k:'fats_g',lbl:'Fats',unit:'g',tgt:70,inp:'inFats'},{k:'water_ml',lbl:'Water',unit:'ml',tgt:3000,inp:'inWater'}];
-let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[],nutrition:[],goals:null};const GOAL_DEF={protein_g:160,carbs_g:300,fats_g:70,water_ml:3000,calories:2290};
+let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[],nutrition:[],goals:null};const GOAL_DEF={protein_g:160,carbs_g:300,fats_g:70,water_ml:3000,calories:2290};function goalFor(k){return (S.goals&&S.goals[k]!=null)?+S.goals[k]:GOAL_DEF[k];}
 let cur=1, todayDay=1;
 const $=id=>document.getElementById(id);
 const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:undefined).then(r=>r.json());
