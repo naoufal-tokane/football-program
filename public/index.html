@@ -279,9 +279,9 @@ const p=fuelVal('protein_g')||0,c=fuelVal('carbs_g')||0,f=fuelVal('fats_g')||0;
 const kcal=Math.round(p*4+c*4+f*9);
 h+='<div class="calrow"><span>Calories (from macros)</span><b>'+kcal+' kcal</b></div>';
 $('fuelBody').innerHTML=h;
-NUTRI.forEach(n=>{const el=$(n.inp);if(el)el.oninput=saveNutritionDebounced;});
+NUTRI.forEach(n=>{const el=$(n.inp);if(el)el.oninput=function(){updateFuelLive();saveNutritionDebounced();};});
 }
-function saveNutrition(){
+function updateFuelLive(){const body=$('fuelBody');if(!body)return;const rows=body.querySelectorAll('.fuelrow');NUTRI.forEach((n,idx)=>{const row=rows[idx];if(!row)return;const el=$(n.inp);const vv=el&&el.value!==''?parseFloat(el.value):null;const cv=(vv==null||isNaN(vv))?0:vv;const pct=Math.min(100,Math.round(cv/n.tgt*100));const bar=row.querySelector('.fbbar i');if(bar)bar.style.width=pct+'%';const txt=row.querySelector('.fbtxt');if(txt)txt.textContent=cv+' / '+n.tgt+' '+n.unit;});const gv=id=>{const e=$(id);const x=e&&e.value!==''?parseFloat(e.value):0;return isNaN(x)?0:x;};const kcal=Math.round(gv('inProtein')*4+gv('inCarbs')*4+gv('inFats')*9);const cb=body.querySelector('.calrow b');if(cb)cb.textContent=kcal+' kcal';}function saveNutrition(){
 const num=id=>{const el=$(id);if(!el)return null;const v=parseFloat(el.value);return isNaN(v)?null:v;};
 const p=num('inProtein'),c=num('inCarbs'),f=num('inFats'),w=num('inWater');
 const kcal=(p!=null||c!=null||f!=null)?Math.round((p||0)*4+(c||0)*4+(f||0)*9):null;
