@@ -66,7 +66,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .fuelrow .fbbar i{display:block;height:100%;background:var(--accent-bright);border-radius:6px;transition:width .3s}
 .fuelrow .fbtxt{font-size:11px;color:var(--muted)}
 .calrow{display:flex;justify-content:space-between;font-size:13px;padding:8px 0 2px;border-top:1px solid var(--border);margin-top:2px}
-.calrow b{font-weight:800}
+.calrow b{font-weight:800}.goalgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.goalfield{background:#0e141b;border:1px solid var(--border);border-radius:12px;padding:10px 12px}.goalfield label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.goalfield input{width:100%;background:transparent;border:none;color:var(--text);font-size:16px;font-weight:700;text-align:left}.goalfield input:focus{outline:none}.goalgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.goalfield{background:#0e141b;border:1px solid var(--border);border-radius:12px;padding:10px 12px}.goalfield label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.goalgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .planrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;cursor:pointer}
 .planrow .num{min-width:64px;height:38px;flex:0 0 auto;padding:0 8px;white-space:nowrap;border-radius:10px;background:#0e141b;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:12px}
 .planrow.istoday{border-color:var(--accent)}
@@ -132,9 +132,9 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <label>Weight today (kg)</label>
 <input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="—"/>
 </div>
-<div class="fuelcard">
+<div class="fuelcard" style="display:none">
 <h3>Fuel today</h3>
-<div id="fuelBody"></div>
+<div></div>
 </div>
 <div class="checkcard">
 <h3>Daily check-in</h3>
@@ -147,7 +147,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <div id="planList"></div>
 </div>
 </section>
-<section id="summary" class="screen">
+<section id="fuel" class="screen"><div class="wrap"><div class="fuelcard"><h3>Macro goals (this cycle)</h3><div class="goalgrid"><div class="goalfield"><label>Protein (g)</label><input type="number" inputmode="decimal" id="goalProtein" placeholder="160"></div><div class="goalfield"><label>Carbs (g)</label><input type="number" inputmode="decimal" id="goalCarbs" placeholder="300"></div><div class="goalfield"><label>Fats (g)</label><input type="number" inputmode="decimal" id="goalFats" placeholder="70"></div><div class="goalfield"><label>Water (ml)</label><input type="number" inputmode="decimal" id="goalWater" placeholder="3000"></div><div class="goalfield"><label>Calories (kcal)</label><input type="number" inputmode="decimal" id="goalCalories" placeholder="auto"></div></div><button class="savegoals" id="saveGoals">Save goals</button></div><div class="fuelcard"><h3>Fuel today</h3><div id="fuelBody"></div></div></div></section><section id="summary" class="screen">
 <div class="wrap">
 <div class="statgrid">
 <div class="stat"><div class="v" id="sPct">0%</div><div class="k">Overall completion</div></div>
@@ -164,7 +164,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 </div>
 <div class="sumcard">
 <h3>Per-day breakdown</h3>
-<div id="sBreak"></div>
+<div id="sBreak"></div></div><div class="sumcard"><h3>Nutrition (averages)</h3><div id="nutriReport"></div>
 </div>
 <div class="actions">
 <button class="btn-primary" id="finishCycle">Finish cycle · Start new</button>
@@ -178,7 +178,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 </main>
 <nav class="nav">
 <button id="tabToday" class="active"><span class="ic">◉</span>Today</button>
-<button id="tabPlan"><span class="ic">▤</span>Plan</button>
+<button id="tabPlan"><span class="ic">▤</span>Plan</button><button id="tabFuel"><span class="ic">🍎</span>Fuel</button>
 <button id="tabSummary"><span class="ic">▣</span>Summary</button>
 </nav>
 <div class="toast" id="toast"></div>
@@ -195,7 +195,7 @@ return DOW[((n-1)%7+1)%7];
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
 const NUTRI=[{k:'protein_g',lbl:'Protein',unit:'g',tgt:160,inp:'inProtein'},{k:'carbs_g',lbl:'Carbs',unit:'g',tgt:300,inp:'inCarbs'},{k:'fats_g',lbl:'Fats',unit:'g',tgt:70,inp:'inFats'},{k:'water_ml',lbl:'Water',unit:'ml',tgt:3000,inp:'inWater'}];
-let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[],nutrition:[]};
+let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[],nutrition:[],goals:null};const GOAL_DEF={protein_g:160,carbs_g:300,fats_g:70,water_ml:3000,calories:2290};
 let cur=1, todayDay=1;
 const $=id=>document.getElementById(id);
 const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:undefined).then(r=>r.json());
@@ -272,8 +272,8 @@ function renderFuel(){
 if(!$('fuelBody'))return;
 let h='';
 NUTRI.forEach(n=>{
-const v=fuelVal(n.k);const cv=v==null?0:v;const pct=Math.min(100,Math.round(cv/n.tgt*100));
-h+='<div class="fuelrow"><label>'+n.lbl+'</label><div class="fb"><div class="fbbar"><i style="width:'+pct+'%"></i></div><div class="fbtxt">'+cv+' / '+n.tgt+' '+n.unit+'</div></div><input type="number" inputmode="decimal" id="'+n.inp+'" value="'+(v==null?'':v)+'" placeholder="—"></div>';
+const v=fuelVal(n.k);const cv=v==null?0:v;const pct=Math.min(100,Math.round(cv/goalFor(n.k)*100));
+h+='<div class="fuelrow"><label>'+n.lbl+'</label><div class="fb"><div class="fbbar"><i style="width:'+pct+'%"></i></div><div class="fbtxt">'+cv+' / '+goalFor(n.k)+' '+n.unit+'</div></div><input type="number" inputmode="decimal" id="'+n.inp+'" value="'+(v==null?'':v)+'" placeholder="—"></div>';
 });
 const p=fuelVal('protein_g')||0,c=fuelVal('carbs_g')||0,f=fuelVal('fats_g')||0;
 const kcal=Math.round(p*4+c*4+f*9);
@@ -281,7 +281,7 @@ h+='<div class="calrow"><span>Calories (from macros)</span><b>'+kcal+' kcal</b><
 $('fuelBody').innerHTML=h;
 NUTRI.forEach(n=>{const el=$(n.inp);if(el)el.oninput=function(){updateFuelLive();saveNutritionDebounced();};});
 }
-function updateFuelLive(){const body=$('fuelBody');if(!body)return;const rows=body.querySelectorAll('.fuelrow');NUTRI.forEach((n,idx)=>{const row=rows[idx];if(!row)return;const el=$(n.inp);const vv=el&&el.value!==''?parseFloat(el.value):null;const cv=(vv==null||isNaN(vv))?0:vv;const pct=Math.min(100,Math.round(cv/n.tgt*100));const bar=row.querySelector('.fbbar i');if(bar)bar.style.width=pct+'%';const txt=row.querySelector('.fbtxt');if(txt)txt.textContent=cv+' / '+n.tgt+' '+n.unit;});const gv=id=>{const e=$(id);const x=e&&e.value!==''?parseFloat(e.value):0;return isNaN(x)?0:x;};const kcal=Math.round(gv('inProtein')*4+gv('inCarbs')*4+gv('inFats')*9);const cb=body.querySelector('.calrow b');if(cb)cb.textContent=kcal+' kcal';}function saveNutrition(){
+function updateFuelLive(){const body=$('fuelBody');if(!body)return;const rows=body.querySelectorAll('.fuelrow');NUTRI.forEach((n,idx)=>{const row=rows[idx];if(!row)return;const el=$(n.inp);const vv=el&&el.value!==''?parseFloat(el.value):null;const cv=(vv==null||isNaN(vv))?0:vv;const pct=Math.min(100,Math.round(cv/goalFor(n.k)*100));const bar=row.querySelector('.fbbar i');if(bar)bar.style.width=pct+'%';const txt=row.querySelector('.fbtxt');if(txt)txt.textContent=cv+' / '+goalFor(n.k)+' '+n.unit;});const gv=id=>{const e=$(id);const x=e&&e.value!==''?parseFloat(e.value):0;return isNaN(x)?0:x;};const kcal=Math.round(gv('inProtein')*4+gv('inCarbs')*4+gv('inFats')*9);const cb=body.querySelector('.calrow b');if(cb)cb.textContent=kcal+' kcal';}function saveNutrition(){
 const num=id=>{const el=$(id);if(!el)return null;const v=parseFloat(el.value);return isNaN(v)?null:v;};
 const p=num('inProtein'),c=num('inCarbs'),f=num('inFats'),w=num('inWater');
 const kcal=(p!=null||c!=null||f!=null)?Math.round((p||0)*4+(c||0)*4+(f||0)*9):null;
@@ -290,7 +290,7 @@ const r=S.nutrition.find(x=>x.day_num===cur);if(r)Object.assign(r,rec);else S.nu
 api('/api/nutrition',{cycle_id:cid(),day_num:cur,protein_g:p,carbs_g:c,fats_g:f,calories:kcal,water_ml:w}).catch(()=>toast('Save failed'));
 }
 let _nutriTimer;
-function saveNutritionDebounced(){clearTimeout(_nutriTimer);_nutriTimer=setTimeout(saveNutrition,800);}
+function saveNutritionDebounced(){clearTimeout(_nutriTimer);_nutriTimer=setTimeout(saveNutrition,800);}function renderGoals(){if(!$('goalProtein'))return;$('goalProtein').value=(S.goals&&S.goals.protein_g!=null)?S.goals.protein_g:'';$('goalCarbs').value=(S.goals&&S.goals.carbs_g!=null)?S.goals.carbs_g:'';$('goalFats').value=(S.goals&&S.goals.fats_g!=null)?S.goals.fats_g:'';$('goalWater').value=(S.goals&&S.goals.water_ml!=null)?S.goals.water_ml:'';$('goalCalories').value=(S.goals&&S.goals.calories!=null)?S.goals.calories:'';}function saveGoals(){const num=id=>{const el=$(id);if(!el||el.value==='')return null;const v=parseFloat(el.value);return isNaN(v)?null:v;};const g={protein_g:num('goalProtein'),carbs_g:num('goalCarbs'),fats_g:num('goalFats'),water_ml:num('goalWater'),calories:num('goalCalories')};S.goals=g;api('/api/cycle-goals',{cycle_id:cid(),protein_g:g.protein_g,carbs_g:g.carbs_g,fats_g:g.fats_g,water_ml:g.water_ml,calories:g.calories}).then(()=>toast('Goals saved')).catch(()=>toast('Save failed'));renderFuel();}function renderGoals(){if(!$('goalProtein'))return;$('goalProtein').value=(S.goals&&S.goals.protein_g!=null)?S.goals.protein_g:'';$('goalCarbs').value=(S.goals&&S.goals.carbs_g!=null)?S.goals.carbs_g:'';$('goalFats').value=(S.goals&&S.goals.fats_g!=null)?S.goals.fats_g:'';$('goalWater').value=(S.goals&&S.goals.water_ml!=null)?S.goals.water_ml:'';$('goalCalories').value=(S.goals&&S.goals.calories!=null)?S.goals.calories:'';}
 function renderPlan(){
 let h='';
 for(let n=1;n<=14;n++){
@@ -347,13 +347,13 @@ $('sBreak').innerHTML=h;
 let hh='';
 if(!S.history||!S.history.length){hh='<div class="sline"><span style="color:var(--muted)">No finished cycles yet</span><span></span></div>';}
 else{S.history.forEach(c=>{const sm=c.summary||{};hh+='<div class="sline"><span>Cycle '+c.cycle_num+' · '+String(c.start_date||'').slice(0,10)+'</span><span>'+(sm.pct!=null?sm.pct+'%':'—')+'</span></div>';});}
-$('histList').innerHTML=hh;
+$('histList').innerHTML=hh;renderNutriReport();
 }
-function showTab(t){
-['today','plan','summary'].forEach(x=>$(x).classList.toggle('active',t===x));
+function renderNutriReport(){const el=$('nutriReport');if(!el)return;const rows=S.nutrition||[];const logged=rows.filter(r=>r.protein_g!=null||r.carbs_g!=null||r.fats_g!=null||r.water_ml!=null);if(!logged.length){el.innerHTML='<div class="sline"><span style="color:var(--muted)">No nutrition logged yet</span><span></span></div>';return;}const avg=k=>{const vals=logged.map(r=>r[k]!=null?+r[k]:null).filter(x=>x!=null);if(!vals.length)return null;return vals.reduce((a,b)=>a+b,0)/vals.length;};const hit=(k,g)=>logged.filter(r=>r[k]!=null&&+r[k]>=g*0.9).length;const defs=[{k:'protein_g',lbl:'Protein',unit:'g'},{k:'carbs_g',lbl:'Carbs',unit:'g'},{k:'fats_g',lbl:'Fats',unit:'g'},{k:'water_ml',lbl:'Water',unit:'ml'},{k:'calories',lbl:'Calories',unit:'kcal'}];let h='';defs.forEach(d=>{const a=avg(d.k);const g=goalFor(d.k);const av=a==null?'—':Math.round(a)+' '+d.unit;const hc=a==null?'':' · '+hit(d.k,g)+'/'+logged.length+' days hit';h+='<div class="sline"><span>'+d.lbl+' (avg)</span><span>'+av+' / '+Math.round(g)+' '+d.unit+hc+'</span></div>';});h+='<div class="sline"><span>Days logged</span><span>'+logged.length+'</span></div>';el.innerHTML=h;}function showTab(t){
+['today','plan','fuel','summary'].forEach(x=>$(x).classList.toggle('active',t===x));
 $('tabToday').classList.toggle('active',t==='today');
 $('tabPlan').classList.toggle('active',t==='plan');
-$('tabSummary').classList.toggle('active',t==='summary');
+$('tabSummary').classList.toggle('active',t==='summary');$('tabFuel').classList.toggle('active',t==='fuel');if(t==='fuel'){renderGoals();renderFuel();}
 if(t==='plan')renderPlan();
 if(t==='summary')renderSummary();
 }
@@ -397,7 +397,7 @@ api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weig
   $('finishCycle').onclick=finishCycle;
   $('tabToday').onclick=()=>showTab('today');
   $('tabPlan').onclick=()=>showTab('plan');
-  $('tabSummary').onclick=()=>showTab('summary');
+  $('tabSummary').onclick=()=>showTab('summary');$('tabFuel').onclick=()=>showTab('fuel');$('saveGoals').onclick=saveGoals;
   async function init(){
     try{
       const data=await api('/api/state');
