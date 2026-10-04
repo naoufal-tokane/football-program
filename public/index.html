@@ -331,3 +331,23 @@ else toast('Could not finish cycle');
 $('prevDay').onclick=()=>{if(cur>1){cur--;renderToday();}};
 $('nextDay').onclick=()=>{if(cur<14){cur++;renderToday();}};
 $('markAll').onclick=markAll;
+  $('resetDay').onclick=resetDay;
+  $('weightInput').onchange=saveWeight;
+  $('finishCycle').onclick=finishCycle;
+  $('tabToday').onclick=()=>showTab('today');
+  $('tabPlan').onclick=()=>showTab('plan');
+  $('tabSummary').onclick=()=>showTab('summary');
+  async function init(){
+    try{
+      const data=await api('/api/state');
+      if(data&&data.days){S=data;}
+    }catch(e){toast('Could not load data');}
+    computeToday();
+    cur=todayDay;
+    if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
+    renderToday();
+  }
+  init();
+</script>
+</body>
+</html>
