@@ -13,7 +13,7 @@ sql`SELECT day_num, item_index, done FROM daily_checklist WHERE cycle_id = ${cid
 sql`SELECT cycle_num, start_date, finished_at, summary FROM cycles WHERE finished_at IS NOT NULL ORDER BY cycle_num DESC`,
 sql`SELECT day_num, protein_g, carbs_g, fats_g, calories, water_ml FROM nutrition WHERE cycle_id = ${cid} ORDER BY day_num`
 ]);
-json(res, 200, { cycle, days, task_progress, weights, checklist, history, nutrition });
+let goals = null; try { const g = await sql`SELECT cycle_id, protein_g, carbs_g, fats_g, water_ml, calories FROM cycle_goals WHERE cycle_id = ${cid}`; goals = g[0] || null; } catch (ge) { goals = null; } json(res, 200, { cycle, days, task_progress, weights, checklist, history, nutrition, goals });
 } catch (e) {
 json(res, 500, { error: String(e.message || e) });
 }
