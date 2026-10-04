@@ -7,7 +7,7 @@
 <title>Football Program</title>
 <style>
 :root{--bg:#0b0f14;--card:#161c24;--border:#222b36;--text:#f5f7fa;--muted:#8a94a6;--accent:#2563eb;--accent-bright:#3b82f6;--am:#38bdf8;--radius:16px}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlighth-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
 body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .header{position:sticky;top:0;z-index:20;background:rgba(11,15,20,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:16px 18px 12px}
@@ -328,14 +328,15 @@ am.forEach((_,i)=>{if(taskDone(cur,'am',i)){upsertTP(cur,'am',i,false);api('/api
 pm.forEach((_,i)=>{if(taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:false});}});
 renderToday();toast('Day reset');
 }
-function saveWeight(silent){
+function saveWeight(){
 const v=parseFloat($('weightInput').value);
 if(isNaN(v))return;
 const w=S.weights.find(x=>x.day_num===cur);
 if(w)w.weight_kg=v;else S.weights.push({day_num:cur,weight_kg:v});
-api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>{if(!silent)toast('Weight saved');}).catch(()=>toast('Save failed'));
+api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weight saved')).catch(()=>toast('Save failed'));
 }
-    let _weightTimer;function saveWeightDebounced(){clearTimeout(_weightTimer);_weightTimer=setTimeout(()=>saveWeight(true),800);}
+    let _weightTimer;
+    function saveWeightDebounced(){clearTimeout(_weightTimer);_weightTimer=setTimeout(saveWeight,800);}
   async function finishCycle(){
     const s=computeSummary();
     if(!confirm('Finish this cycle and start a new one? Your progress will be archived and the forms reset.'))return;
