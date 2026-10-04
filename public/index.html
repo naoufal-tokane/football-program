@@ -56,6 +56,17 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .weighrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
 .weighrow label{font-size:13px;color:var(--muted);flex:1}
 .weighrow input{width:92px;background:#0e141b;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:9px 10px;font-size:15px;text-align:right}
+.fuelcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 6px;margin-bottom:14px}
+.fuelcard h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.fuelrow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fuelrow label{font-size:13px;color:var(--text);width:70px;flex:0 0 auto}
+.fuelrow input{width:72px;background:#0e141b;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 9px;font-size:14px;text-align:right}
+.fuelrow .fb{flex:1;min-width:0}
+.fuelrow .fbbar{height:6px;background:#0e141b;border-radius:6px;overflow:hidden;margin-top:5px}
+.fuelrow .fbbar i{display:block;height:100%;background:var(--accent-bright);border-radius:6px;transition:width .3s}
+.fuelrow .fbtxt{font-size:11px;color:var(--muted)}
+.calrow{display:flex;justify-content:space-between;font-size:13px;padding:8px 0 2px;border-top:1px solid var(--border);margin-top:2px}
+.calrow b{font-weight:800}
 .planrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;cursor:pointer}
 .planrow .num{min-width:64px;height:38px;flex:0 0 auto;padding:0 8px;white-space:nowrap;border-radius:10px;background:#0e141b;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:12px}
 .planrow.istoday{border-color:var(--accent)}
@@ -121,6 +132,10 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <label>Weight today (kg)</label>
 <input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="—"/>
 </div>
+<div class="fuelcard">
+<h3>Fuel today</h3>
+<div id="fuelBody"></div>
+</div>
 <div class="checkcard">
 <h3>Daily check-in</h3>
 <div id="checklist"></div>
@@ -179,7 +194,8 @@ return DOW[((n-1)%7+1)%7];
 }
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
-let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[]};
+const NUTRI=[{k:'protein_g',lbl:'Protein',unit:'g',tgt:160,inp:'inProtein'},{k:'carbs_g',lbl:'Carbs',unit:'g',tgt:300,inp:'inCarbs'},{k:'fats_g',lbl:'Fats',unit:'g',tgt:70,inp:'inFats'},{k:'water_ml',lbl:'Water',unit:'ml',tgt:3000,inp:'inWater'}];
+let S={cycle:null,days:[],task_progress:[],weights:[],checklist:[],history:[],nutrition:[]};
 let cur=1, todayDay=1;
 const $=id=>document.getElementById(id);
 const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:undefined).then(r=>r.json());
@@ -249,7 +265,32 @@ bindTasks();
 const w=S.weights.find(x=>x.day_num===cur);
 $('weightInput').value=w?w.weight_kg:'';
 renderChecklist();
+renderFuel();
 }
+function fuelVal(k){const r=S.nutrition.find(x=>x.day_num===cur);return r&&r[k]!=null?+r[k]:null;}
+function renderFuel(){
+if(!$('fuelBody'))return;
+let h='';
+NUTRI.forEach(n=>{
+const v=fuelVal(n.k);const cv=v==null?0:v;const pct=Math.min(100,Math.round(cv/n.tgt*100));
+h+='<div class="fuelrow"><label>'+n.lbl+'</label><div class="fb"><div class="fbbar"><i style="width:'+pct+'%"></i></div><div class="fbtxt">'+cv+' / '+n.tgt+' '+n.unit+'</div></div><input type="number" inputmode="decimal" id="'+n.inp+'" value="'+(v==null?'':v)+'" placeholder="—"></div>';
+});
+const p=fuelVal('protein_g')||0,c=fuelVal('carbs_g')||0,f=fuelVal('fats_g')||0;
+const kcal=Math.round(p*4+c*4+f*9);
+h+='<div class="calrow"><span>Calories (from macros)</span><b>'+kcal+' kcal</b></div>';
+$('fuelBody').innerHTML=h;
+NUTRI.forEach(n=>{const el=$(n.inp);if(el)el.oninput=saveNutritionDebounced;});
+}
+function saveNutrition(){
+const num=id=>{const el=$(id);if(!el)return null;const v=parseFloat(el.value);return isNaN(v)?null:v;};
+const p=num('inProtein'),c=num('inCarbs'),f=num('inFats'),w=num('inWater');
+const kcal=(p!=null||c!=null||f!=null)?Math.round((p||0)*4+(c||0)*4+(f||0)*9):null;
+const rec={day_num:cur,protein_g:p,carbs_g:c,fats_g:f,calories:kcal,water_ml:w};
+const r=S.nutrition.find(x=>x.day_num===cur);if(r)Object.assign(r,rec);else S.nutrition.push(rec);
+api('/api/nutrition',{cycle_id:cid(),day_num:cur,protein_g:p,carbs_g:c,fats_g:f,calories:kcal,water_ml:w}).catch(()=>toast('Save failed'));
+}
+let _nutriTimer;
+function saveNutritionDebounced(){clearTimeout(_nutriTimer);_nutriTimer=setTimeout(saveNutrition,800);}
 function renderPlan(){
 let h='';
 for(let n=1;n<=14;n++){
