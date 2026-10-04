@@ -167,7 +167,7 @@ function dayName(n){
   if(S.cycle&&S.cycle.start_date){
     const base=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
     base.setDate(base.getDate()+(n-1));
-    const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return DOW[base.getDay()]+' · '+M[base.getMonth()]+' '+base.getDate();
+    const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return DOW[base.getDay()].slice(0,3)+' · '+M[base.getMonth()]+' '+base.getDate();
   }
   return DOW[((n-1)%7+1)%7];
 }
