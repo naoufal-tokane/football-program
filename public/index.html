@@ -72,6 +72,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .sumcard h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 .sline{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--border)}
 .sline:first-of-type{border-top:none}
+.wchart{margin-bottom:10px}
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;background:rgba(11,15,20,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border)}
 .nav button{flex:1;background:none;border:none;color:var(--muted);padding:12px 0 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .ic{font-size:19px}
@@ -120,6 +121,10 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <label>Weight today (kg)</label>
 <input type="number" step="0.1" inputmode="decimal" id="weightInput" placeholder="—"/>
 </div>
+<div class="checkcard">
+<h3>Daily check-in</h3>
+<div id="checklist"></div>
+</div>
 </div>
 </section>
 <section id="plan" class="screen">
@@ -137,6 +142,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 </div>
 <div class="sumcard">
 <h3>Weight progress</h3>
+<div class="wchart" id="weightChart"></div>
 <div class="sline"><span>Start</span><span id="wStart">—</span></div>
 <div class="sline"><span>Latest</span><span id="wEnd">—</span></div>
 <div class="sline"><span>Change</span><span id="wDelta">—</span></div>
@@ -164,12 +170,12 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <script>
 const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function dayName(n){
-  if(S.cycle&&S.cycle.start_date){
-    const base=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
-    base.setDate(base.getDate()+(n-1));
-    const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return DOW[base.getDay()].slice(0,3)+' · '+M[base.getMonth()]+' '+base.getDate();
-  }
-  return DOW[((n-1)%7+1)%7];
+if(S.cycle&&S.cycle.start_date){
+const base=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
+base.setDate(base.getDate()+(n-1));
+const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return DOW[base.getDay()].slice(0,3)+' · '+M[base.getMonth()]+' '+base.getDate();
+}
+return DOW[((n-1)%7+1)%7];
 }
 const CHECK_ITEMS=['Both sessions done (or autoregulated)','8–9 h sleep','10 min mobility + prehab','Logged how I feel'];
 const WEEK=d=>d<=7?1:2;
@@ -270,8 +276,23 @@ const wStart=ws.length?+ws[0].weight_kg:null;
 const wEnd=ws.length?+ws[ws.length-1].weight_kg:null;
 return {pct:total?Math.round(done/total*100):0,done,total,best,worst,per,wStart,wEnd};
 }
+function renderWeightChart(){
+const el=$('weightChart');if(!el)return;
+const pts=S.weights.slice().filter(w=>w.weight_kg!=null).sort((a,b)=>a.day_num-b.day_num).map(w=>({x:+w.day_num,y:+w.weight_kg}));
+if(pts.length<2){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0">Log weight on at least 2 days to see a trend</div>';return;}
+const W=280,H=70,P=6;
+const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+const minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys);
+const spanX=(maxX-minX)||1,spanY=(maxY-minY)||1;
+const sx=x=>P+(x-minX)/spanX*(W-2*P);
+const sy=y=>H-P-(y-minY)/spanY*(H-2*P);
+let d='';pts.forEach((p,i)=>{d+=(i?' L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1);});
+let dots='';pts.forEach(p=>{dots+='<circle cx="'+sx(p.x).toFixed(1)+'" cy="'+sy(p.y).toFixed(1)+'" r="2.5" fill="var(--accent-bright)"></circle>';});
+el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="none"><path d="'+d+'" fill="none" stroke="var(--accent-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>'+dots+'</svg>';
+}
 function renderSummary(){
 const s=computeSummary();
+renderWeightChart();
 $('sPct').textContent=s.pct+'%';
 $('sTasks').textContent=s.done+'/'+s.total;
 $('sBest').textContent=s.best.pct>=0?dayName(s.best.n)+' ·'+s.best.pct+'%':'—';
@@ -314,36 +335,9 @@ const w=S.weights.find(x=>x.day_num===cur);
 if(w)w.weight_kg=v;else S.weights.push({day_num:cur,weight_kg:v});
 api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weight saved')).catch(()=>toast('Save failed'));
 }
+let _weightTimer;
+function saveWeightDebounced(){clearTimeout(_weightTimer);_weightTimer=setTimeout(saveWeight,800);}
 async function finishCycle(){
 const s=computeSummary();
 if(!confirm('Finish this cycle and start a new one? Your progress will be archived and the forms reset.'))return;
-const summary={pct:s.pct,done:s.done,total:s.total,best:s.best,worst:s.worst,wStart:s.wStart,wEnd:s.wEnd};
-try{
-const r=await api('/api/finish-cycle',{cycle_id:cid(),summary});
-if(r&&r.ok){toast('Cycle archived · new cycle started');await init();showTab('today');}
-else toast('Could not finish cycle');
-}catch(e){toast('Could not finish cycle');}
-}
-$('prevDay').onclick=()=>{if(cur>1){cur--;renderToday();}};
-$('nextDay').onclick=()=>{if(cur<14){cur++;renderToday();}};
-$('markAll').onclick=markAll;
-  $('resetDay').onclick=resetDay;
-  $('weightInput').onchange=saveWeight;
-  $('finishCycle').onclick=finishCycle;
-  $('tabToday').onclick=()=>showTab('today');
-  $('tabPlan').onclick=()=>showTab('plan');
-  $('tabSummary').onclick=()=>showTab('summary');
-  async function init(){
-    try{
-      const data=await api('/api/state');
-      if(data&&data.days){S=data;}
-    }catch(e){toast('Could not load data');}
-    computeToday();
-    cur=todayDay;
-    if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
-    renderToday();
-  }
-  init();
-</script>
-</body>
-</html>
+const summary={pct:s.pct,
