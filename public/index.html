@@ -333,4 +333,42 @@ const v=parseFloat($('weightInput').value);
 if(isNaN(v))return;
 const w=S.weights.find(x=>x.day_num===cur);
 if(w)w.weight_kg=v;else S.weights.push({day_num:cur,weight_kg:v});
-api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>
+api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weight saved')).catch(()=>toast('Save failed'));
+}
+  let _weightTimer;
+  function saveWeightDebounced(){clearTimeout(_weightTimer);_weightTimer=setTimeout(saveWeight,800);}
+  async function finishCycle(){
+    const s=computeSummary();
+    if(!confirm('Finish this cycle and start a new one? Your progress will be archived and the forms reset.'))return;
+    const summary={pct:s.pct,done:s.done,total:s.total,best:s.best,worst:s.worst,wStart:s.wStart,wEnd:s.wEnd};
+    try{
+      const r=await api('/api/finish-cycle',{cycle_id:cid(),summary});
+      if(r&&r.ok){toast('Cycle archived · new cycle started');await init();showTab('today');}
+      else toast('Could not finish cycle');
+    }catch(e){toast('Could not finish cycle');}
+  }
+  $('prevDay').onclick=()=>{if(cur>1){cur--;renderToday();}};
+  $('nextDay').onclick=()=>{if(cur<14){cur++;renderToday();}};
+  $('markAll').onclick=markAll;
+  $('resetDay').onclick=resetDay;
+  $('weightInput').onchange=saveWeight;
+  $('weightInput').oninput=saveWeightDebounced;
+  $('finishCycle').onclick=finishCycle;
+  $('tabToday').onclick=()=>showTab('today');
+  $('tabPlan').onclick=()=>showTab('plan');
+  $('tabSummary').onclick=()=>showTab('summary');
+  async function init(){
+    try{
+      const data=await api('/api/state');
+      if(data&&data.days){S=data;}
+    }catch(e){toast('Could not load data');}
+    computeToday();
+    cur=todayDay;
+    if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
+    renderToday();
+  }
+  init();
+
+</script>
+</body>
+</html>
