@@ -95,7 +95,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <body>
 <div id="authWrap" class="authwrap" style="display:none"><div class="authcard"><h2 id="authTitle">Welcome back</h2><p class="sub" id="authSub">Log in to your Football Program</p><label>Email</label><input type="email" id="authEmail" autocomplete="email" placeholder="you@example.com"><label>Password</label><input type="password" id="authPassword" autocomplete="current-password" placeholder="At least 8 characters"><button class="primary" id="authSubmit">Log in</button><div class="err" id="authErr"></div><div class="toggle" id="authToggle">New here? <a id="authSwitch">Create an account</a></div></div></div><header class="header"><button class="logoutbtn" id="logoutBtn" style="display:none">Log out</button>
 <h1>Football Program</h1>
-<p id="subHdr">Naoufal · 2-week cycle</p>
+<p id="subHdr">2-week cycle</p>
 </header>
 <main>
 <section id="today" class="screen active">
@@ -405,7 +405,7 @@ api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weig
     }catch(e){toast('Could not load data');}
     computeToday();
     cur=todayDay;
-    if(S.cycle){$('subHdr').textContent='Naoufal · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
+    if(S.cycle){$('subHdr').textContent=(S.user&&S.user.email?S.user.email:'')+' · Cycle '+S.cycle.cycle_num+' · starts '+String(S.cycle.start_date).slice(0,10);}
     renderToday();
   }
   init();
