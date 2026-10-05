@@ -10,8 +10,12 @@ export default async function handler(req, res) {
     }
     const cycle = cyc[0];
     const cid = cycle ? cycle.id : 0;
+    const mine = await sql`SELECT count(*)::int AS n FROM days WHERE user_id = ${auth.id}`;
+    if (!mine[0] || mine[0].n === 0) {
+      await sql`INSERT INTO days (user_id, day_num, week, title, am_tasks, pm_tasks, is_rest) SELECT ${auth.id}, day_num, week, title, am_tasks, pm_tasks, is_rest FROM days WHERE user_id IS NULL ORDER BY day_num`;
+    }
     const [days, task_progress, weights, checklist, history, nutrition] = await Promise.all([
-      sql`SELECT day_num, week, title, am_tasks, pm_tasks, is_rest FROM days ORDER BY day_num`,
+      sql`SELECT day_num, week, title, am_tasks, pm_tasks, is_rest FROM days WHERE user_id = ${auth.id} ORDER BY day_num`,
       sql`SELECT day_num, session, task_index, done FROM task_progress WHERE cycle_id = ${cid}`,
       sql`SELECT day_num, weight_kg, logged_at FROM weights WHERE cycle_id = ${cid} ORDER BY day_num`,
       sql`SELECT day_num, item_index, done FROM daily_checklist WHERE cycle_id = ${cid}`,
