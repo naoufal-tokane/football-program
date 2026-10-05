@@ -406,6 +406,24 @@ api('/api/weight',{cycle_id:cid(),day_num:cur,weight_kg:v}).then(()=>toast('Weig
     renderToday();
   }
   init();
+  (function(){
+    function userLabel(){var u=S&&S.user?S.user:null;if(!u)return '';var fn=(u.first_name||'').trim();var ln=(u.last_name||'').trim();var full=(fn+' '+ln).trim();return full||u.email||'';}
+    function ensureNameFields(){var sub=document.getElementById('authSub');if(!sub)return;if(document.getElementById('nameFields'))return;var wrap=document.createElement('div');wrap.id='nameFields';wrap.style.display='none';wrap.innerHTML='<div style="display:flex;gap:10px"><div style="flex:1"><label>First name</label><input type="text" id="authFirst" autocomplete="given-name" placeholder="First name"></div><div style="flex:1"><label>Family name</label><input type="text" id="authLast" autocomplete="family-name" placeholder="Family name"></div></div>';sub.parentNode.insertBefore(wrap,sub.nextSibling);}
+    function toggleNameFields(){var nf=document.getElementById('nameFields');if(nf)nf.style.display=(authMode==='signup')?'block':'none';}
+    ensureNameFields();
+    var _origSetAuthMode=setAuthMode;setAuthMode=function(m){_origSetAuthMode(m);toggleNameFields();};
+    var _origSubmitAuth=submitAuth;submitAuth=function(){if(authMode!=='signup')return _origSubmitAuth();var email=document.getElementById('authEmail').value.trim();var password=document.getElementById('authPassword').value;var first=(document.getElementById('authFirst')||{}).value||'';var last=(document.getElementById('authLast')||{}).value||'';var errEl=document.getElementById('authErr');errEl.textContent='';if(!email||!password){errEl.textContent='Please enter email and password';return;}var btn=document.getElementById('authSubmit');btn.disabled=true;fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:password,first_name:first,last_name:last})}).then(function(r){return r.json().then(function(d){return {r:r,d:d};});}).then(function(x){if(!x.r.ok){errEl.textContent=x.d.error||'Something went wrong';}else{document.getElementById('authPassword').value='';hideAuth();init().then(function(){showTab('today');});}}).catch(function(){errEl.textContent='Network error';}).then(function(){btn.disabled=false;});};
+    document.getElementById('authSubmit').onclick=function(){submitAuth();};
+    document.getElementById('authPassword').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submitAuth();}});
+    toggleNameFields();
+    function ensureWelcome(){if(document.getElementById('welcomeScreen'))return;var main=document.querySelector('main');if(!main)return;var sec=document.createElement('section');sec.id='welcomeScreen';sec.className='screen';sec.innerHTML='<div class="welcomewrap"><div class="welcomecard"><div class="emoji">\u26BD</div><h2 id="welcomeTitle">Welcome!</h2><p>Your account is ready. Your coach is preparing your personalized program.</p><p>You\u2019ll see your training plan here as soon as it\u2019s been set up. Check back soon!</p></div></div>';main.appendChild(sec);}
+    ensureWelcome();
+    var _origShowTab=showTab;showTab=function(t){var hasProg=S&&S.days&&S.days.length>0;var nav=document.querySelector('.nav');var ws=document.getElementById('welcomeScreen');if(!hasProg){['today','plan','fuel','summary'].forEach(function(x){var el=document.getElementById(x);if(el)el.classList.remove('active');});if(ws)ws.classList.add('active');if(nav)nav.style.display='none';return;}if(ws)ws.classList.remove('active');if(nav)nav.style.display='';_origShowTab(t);};
+    function refreshIdentity(){var lbl=userLabel();var h1=document.querySelector('.header h1');if(h1&&lbl)h1.textContent=lbl;var sub=document.getElementById('subHdr');if(sub){if(S&&S.cycle){sub.textContent='Cycle '+S.cycle.cycle_num+' \u00B7 starts '+String(S.cycle.start_date).slice(0,10);}}var wt=document.getElementById('welcomeTitle');if(wt&&lbl)wt.textContent='Welcome, '+((S.user&&S.user.first_name)?S.user.first_name:lbl)+'!';}
+    var _origInit=init;init=function(){return _origInit().then(function(res){refreshIdentity();showTab('today');return res;});};
+    init();
+  })();
+  
 
 </script>
 </body>
