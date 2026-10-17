@@ -46,6 +46,23 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .task .box{width:22px;height:22px;flex:0 0 auto;border-radius:7px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
 .task.done .box{background:var(--accent);border-color:var(--accent)}
 .task .label{font-size:14px;line-height:1.3}
+.task .label{flex:1;min-width:0}
+.metric{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.metric input{width:64px;background:#0e141b;border:1px solid var(--border);border-radius:9px;color:var(--text);padding:7px 8px;font-size:14px;text-align:right}
+.metric span{font-size:11px;color:var(--muted)}
+.circuit{background:#0e141b;border:1px solid var(--border);border-radius:14px;padding:14px;margin:8px 0 10px}
+.ct-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.ct-phase{color:var(--am)}
+.ct-phase.rest{color:#f59e0b}
+.ct-phase.done{color:#22c55e}
+.ct-time{font-size:48px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:8px 0 2px;letter-spacing:-1px}
+.ct-name{text-align:center;font-size:15px;font-weight:700;min-height:20px}
+.ct-next{text-align:center;font-size:12px;color:var(--muted);margin-top:2px;min-height:16px}
+.ct-btns{display:flex;gap:8px;margin-top:12px}
+.ct-btns button{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text)}
+.ct-btns button.go{background:var(--accent);border-color:var(--accent);color:#fff}
+.task.station.now{background:rgba(59,130,246,.10);border-radius:10px;margin:0 -8px;padding-left:8px;padding-right:8px}
+.dur{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:2px 8px}
 .task.done .label{text-decoration:line-through;color:var(--muted)}
 .actions{display:flex;gap:10px;margin:4px 0 20px}
 .actions button{flex:1;padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border)}
@@ -228,15 +245,71 @@ const diff=Math.floor((now-start)/86400000);
 todayDay=(isNaN(diff)||diff<0)?1:(diff>13?14:diff+1);
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// ---- Strength logging: exercises written as sets x reps (e.g. "Bench press 4x6-8") get a max-weight box;
+// pull-ups / dips / push-ups written in sets get a best-reps box. Saved in task_progress.weight_kg / reps.
+function metricKind(t){const s=String(t);
+if(/^(assisted\s+)?(pull-?ups?|chin-?ups?|dips?|push-?ups?)\b/i.test(s)&&/\bsets?\b/i.test(s))return 'reps';
+if(/\b\d+\s*x\s*\d+/i.test(s)&&!/\b\d+\s*x\s*\d+\s*(s\b|sec|min)/i.test(s)&&!/(jump|bound|hop|shuttle|sprint|run|drill|plank|hold|hanging)/i.test(s))return 'kg';
+return null;}
+function tpRow(n,s,i){return S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);}
+function metricVal(n,s,i,kind){const r=tpRow(n,s,i);if(!r)return '';const v=kind==='kg'?r.weight_kg:r.reps;return v==null?'':v;}
+const _mTimers={};
+function setMetric(n,s,i,kind,raw){const v=raw===''?null:parseFloat(raw);if(raw!==''&&isNaN(v))return;let r=tpRow(n,s,i);if(!r){r={day_num:n,session:s,task_index:i,done:false};S.task_progress.push(r);}
+if(kind==='kg')r.weight_kg=v;else r.reps=v==null?null:Math.round(v);
+const k=n+s+i;clearTimeout(_mTimers[k]);_mTimers[k]=setTimeout(()=>{const b={cycle_id:cid(),day_num:n,session:s,task_index:i};if(kind==='kg')b.weight_kg=r.weight_kg;else b.reps=r.reps;api('/api/task',b).then(x=>{if(x&&x.ok)toast('Saved');else toast('Save failed');}).catch(()=>toast('Save failed'));},700);}
+function metricHTML(n,s,x){const kind=metricKind(x.t);if(!kind)return '';return '<div class="metric"><input type="number" inputmode="decimal" min="0" step="'+(kind==='kg'?'0.5':'1')+'" data-metric="'+kind+'" data-sess="'+s+'" data-i="'+x.i+'" value="'+esc(String(metricVal(n,s,x.i,kind)))+'" placeholder="'+(kind==='kg'?'max':'best')+'" aria-label="'+(kind==='kg'?'Max weight in kg':'Best set in reps')+'"><span>'+(kind==='kg'?'kg':'reps')+'</span></div>';}
+function taskRow(n,sess,x,extraCls,pill){const dn=taskDone(n,sess,x.i);return '<div class="task'+(dn?' done':'')+(extraCls?' '+extraCls:'')+'" data-sess="'+sess+'" data-i="'+x.i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(x.t)+'</div>'+(pill?'<span class="dur">'+pill+'</span>':'')+metricHTML(n,sess,x)+'</div>';}
+
+// ---- Circuits: a session with a "Repeat circuit xN" line becomes a timed circuit.
+function stationSecs(t){const s=String(t);let m=s.match(/(\d+)\s*s(?:ec)?\b(\s*\/\s*side)?/i);if(m)return (+m[1])*(m[2]?2:1);m=s.match(/(\d+)\s*min\b/i);if(m&&!/rest/i.test(s))return (+m[1])*60;return null;}
+function circuitInfo(list){const ri=list.findIndex(x=>/repeat\s+circuit\s*x\s*\d+/i.test(x.t));if(ri<0)return null;const rt=list[ri].t;const rounds=+rt.match(/x\s*(\d+)/i)[1];let rest=60;let m=rt.match(/(\d+)\s*min/i);if(m)rest=+m[1]*60;else{m=rt.match(/(\d+)\s*s(?:ec)?\b/i);if(m)rest=+m[1];}
+const pre=list.slice(0,ri);const isSetup=x=>/^(warm-?up|mobility|stretch|cool-?down)/i.test(x.t);
+const stations=pre.filter(x=>!isSetup(x)).map(x=>({i:x.i,t:x.t,secs:stationSecs(x.t)}));
+return {rounds,rest,stations,before:pre.filter(isSetup),repeat:list[ri],after:list.slice(ri+1)};}
+let CT=null;
+function ctKey(n,s){return cid()+':'+n+':'+s;}
+function ctFresh(n,s,info){return {key:ctKey(n,s),n,s,info,round:1,idx:0,phase:'ready',running:false,remaining:null,elapsed:0,endAt:0,startAt:0,timer:null};}
+function fmt(sec){sec=Math.max(0,Math.ceil(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+let _ac=null;function beep(f,d){try{_ac=_ac||new (window.AudioContext||window.webkitAudioContext)();const o=_ac.createOscillator(),g=_ac.createGain();o.frequency.value=f||880;o.connect(g);g.connect(_ac.destination);g.gain.setValueAtTime(.2,_ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,_ac.currentTime+(d||.18));o.start();o.stop(_ac.currentTime+(d||.18));}catch(e){}try{navigator.vibrate&&navigator.vibrate(120);}catch(e){}}
+let _wl=null;async function wake(on){try{if(on&&navigator.wakeLock&&!_wl){_wl=await navigator.wakeLock.request('screen');_wl.addEventListener('release',()=>{_wl=null;});}if(!on&&_wl){await _wl.release();_wl=null;}}catch(e){_wl=null;}}
+function ctStation(){return CT.info.stations[CT.idx];}
+function ctEnter(){const st=ctStation();CT.phase='work';CT.elapsed=0;CT.remaining=st&&st.secs?st.secs:null;CT.endAt=Date.now()+(CT.remaining||0)*1000;CT.startAt=Date.now();}
+function ctAdvance(){if(CT.phase==='rest'){CT.round++;CT.idx=0;ctEnter();beep(988,.3);return;}
+CT.idx++;if(CT.idx<CT.info.stations.length){ctEnter();beep(880);return;}
+if(CT.round<CT.info.rounds){CT.phase='rest';CT.remaining=CT.info.rest;CT.endAt=Date.now()+CT.remaining*1000;beep(523,.35);return;}
+CT.phase='done';CT.running=false;clearInterval(CT.timer);wake(false);beep(1047,.5);
+const n=CT.n,s=CT.s;CT.info.stations.concat([CT.info.repeat]).forEach(x=>{if(!taskDone(n,s,x.i)){upsertTP(n,s,x.i,true);api('/api/task',{cycle_id:cid(),day_num:n,session:s,task_index:x.i,done:true});}});toast('Circuit complete');renderToday();}
+function ctTick(){if(!CT||!CT.running)return;if(CT.remaining!=null){const left=(CT.endAt-Date.now())/1000;if(left<=3.05&&left>0&&Math.ceil(left)!==CT._lastBeep){CT._lastBeep=Math.ceil(left);beep(660,.08);}if(left<=0){ctAdvance();}else CT.remaining=left;}else{CT.elapsed=(Date.now()-CT.startAt)/1000;}ctPaint();}
+function ctPlay(){if(!CT)return;if(CT.phase==='done'){return;}if(CT.running){CT.running=false;clearInterval(CT.timer);if(CT.remaining!=null)CT.remaining=Math.max(0,(CT.endAt-Date.now())/1000);else CT.elapsed=(Date.now()-CT.startAt)/1000;wake(false);ctPaint();return;}
+beep(0.0001,.01);if(CT.phase==='ready')ctEnter();else{if(CT.remaining!=null)CT.endAt=Date.now()+CT.remaining*1000;else CT.startAt=Date.now()-CT.elapsed*1000;}
+CT.running=true;clearInterval(CT.timer);CT.timer=setInterval(ctTick,200);wake(true);ctPaint();}
+function ctNext(){if(!CT||CT.phase==='done')return;if(CT.phase==='ready'){ctEnter();}ctAdvance();if(CT&&CT.running&&CT.phase!=='done'){CT.endAt=Date.now()+(CT.remaining||0)*1000;CT.startAt=Date.now();}ctPaint();}
+function ctReset(){if(!CT)return;clearInterval(CT.timer);wake(false);CT=ctFresh(CT.n,CT.s,CT.info);ctPaint();}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&CT&&CT.running)wake(true);});
+function ctPaint(){if(!CT||CT.n!==cur)return;const el=$('ct-'+CT.s);if(!el)return;const info=CT.info,st=info.stations[CT.idx];
+const ph=el.querySelector('.ct-phase'),tm=el.querySelector('.ct-time'),nm=el.querySelector('.ct-name'),nx=el.querySelector('.ct-next'),pb=el.querySelector('[data-ct=play]');
+el.querySelector('.ct-round').textContent='Round '+Math.min(CT.round,info.rounds)+' of '+info.rounds;
+ph.className='ct-phase'+(CT.phase==='rest'?' rest':CT.phase==='done'?' done':'');
+if(CT.phase==='ready'){ph.textContent='Ready';tm.textContent=st&&st.secs?fmt(st.secs):'0:00';nm.textContent=st?st.t:'';nx.textContent='Press Start when you are in position';}
+else if(CT.phase==='work'){ph.textContent='Station '+(CT.idx+1)+' of '+info.stations.length;tm.textContent=CT.remaining!=null?fmt(CT.remaining):fmt(CT.elapsed);nm.textContent=st.t;const nxt=info.stations[CT.idx+1];nx.textContent=CT.remaining==null?'Do the reps, then tap Next':(nxt?'Next: '+nxt.t:(CT.round<info.rounds?'Next: rest':'Last station'));}
+else if(CT.phase==='rest'){ph.textContent='Rest';tm.textContent=fmt(CT.remaining);nm.textContent='Rest before round '+(CT.round+1);nx.textContent='Next: '+info.stations[0].t;}
+else{ph.textContent='Done';tm.textContent='✓';nm.textContent='Circuit complete';nx.textContent=info.rounds+' rounds finished';}
+pb.textContent=CT.phase==='done'?'Done':CT.running?'Pause':(CT.phase==='ready'?'Start':'Resume');pb.classList.toggle('go',!CT.running&&CT.phase!=='done');
+document.querySelectorAll('#'+CT.s+'Card .task.station').forEach(r=>r.classList.toggle('now',CT.phase==='work'&&+r.dataset.i===(st?st.i:-1)));}
+
 function renderCard(n,sess,tasks){
 const cls=sess==='am'?'am':'pm';
 const title=sess==='am'?'Morning':'Evening';
 let done=0;tasks.forEach(x=>{if(taskDone(n,sess,x.i))done++;});
 let h='<div class="card '+cls+'"><div class="cardhead"><span class="dot"></span><h3>'+title+'</h3><span class="count">'+done+'/'+tasks.length+'</span></div>';
-tasks.forEach(x=>{
-const dn=taskDone(n,sess,x.i);
-h+='<div class="task'+(dn?' done':'')+'" data-sess="'+sess+'" data-i="'+x.i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(x.t)+'</div></div>';
-});
+const info=circuitInfo(tasks);
+if(!info){tasks.forEach(x=>{h+=taskRow(n,sess,x);});h+='</div>';return h;}
+if(!CT||CT.key!==ctKey(n,sess)){if(CT&&CT.running){/* keep the running circuit of another day alive */}else CT=ctFresh(n,sess,info);}
+info.before.forEach(x=>{h+=taskRow(n,sess,x);});
+h+='<div class="circuit" id="ct-'+sess+'"><div class="ct-top"><span class="ct-phase">Ready</span><span class="ct-round"></span></div><div class="ct-time">0:00</div><div class="ct-name"></div><div class="ct-next"></div><div class="ct-btns"><button data-ct="play" class="go">Start</button><button data-ct="next">Next</button><button data-ct="reset">Reset</button></div></div>';
+info.stations.forEach(st=>{h+=taskRow(n,sess,{i:st.i,t:st.t},'station',st.secs?fmt(st.secs):'reps');});
+h+=taskRow(n,sess,info.repeat,'',info.rounds+' rounds · '+fmt(info.rest)+' rest');
+info.after.forEach(x=>{h+=taskRow(n,sess,x);});
 h+='</div>';
 return h;
 }
@@ -246,8 +319,14 @@ function setTask(n,s,i,dn){upsertTP(n,s,i,dn);renderToday();api('/api/task',{cyc
 function setCheck(n,i,dn){upsertCK(n,i,dn);renderChecklist();api('/api/checklist',{cycle_id:cid(),day_num:n,item_index:i,done:dn}).catch(()=>toast('Save failed'));}
 function bindTasks(){
 document.querySelectorAll('#amCard .task,#pmCard .task').forEach(el=>{
-el.onclick=()=>{const s=el.dataset.sess;const i=+el.dataset.i;setTask(cur,s,i,!taskDone(cur,s,i));};
+el.onclick=(e)=>{if(e.target.closest('.metric'))return;const s=el.dataset.sess;const i=+el.dataset.i;setTask(cur,s,i,!taskDone(cur,s,i));};
 });
+document.querySelectorAll('#amCard [data-metric],#pmCard [data-metric]').forEach(inp=>{
+inp.onclick=e=>e.stopPropagation();
+inp.oninput=()=>setMetric(cur,inp.dataset.sess,+inp.dataset.i,inp.dataset.metric,inp.value.trim());
+});
+document.querySelectorAll('.circuit [data-ct]').forEach(b=>{b.onclick=e=>{e.stopPropagation();const a=b.dataset.ct;if(CT&&CT.key!==ctKey(cur,b.closest('.circuit').id.slice(3))){if(CT.running){toast('Another circuit is running');return;}CT=null;renderToday();return;}if(a==='play')ctPlay();else if(a==='next')ctNext();else ctReset();};});
+if(CT&&CT.n===cur)ctPaint();
 }
 function renderChecklist(){if(!document.getElementById('checklist'))return;
 let h='';
