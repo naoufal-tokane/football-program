@@ -51,6 +51,12 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .actions button{flex:1;padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border)}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn-ghost{background:transparent;color:var(--muted)}
+.modebar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.modebar h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.modebtns{display:flex;gap:8px}
+.modebtns button{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:#0e141b;color:var(--text)}
+.modebtns button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.modehint{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
 .checkcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 4px;margin-bottom:14px}
 .checkcard h3{margin:0 0 6px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 .weighrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
@@ -122,6 +128,7 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <p id="ringSub">0 of 0 tasks complete</p>
 </div>
 </div>
+<div id="modeBar"></div>
 <div id="amCard"></div>
 <div id="pmCard"></div>
 <div class="actions">
@@ -199,10 +206,20 @@ const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/j
 function cid(){return S.cycle?S.cycle.id:0;}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1400);}
 function parseTasks(t){if(Array.isArray(t))return t;try{return JSON.parse(t||'[]');}catch(e){return [];}}
+// Match / no-match days: tasks starting with "Match:" show only on match days,
+// tasks starting with "No match:" only when there is no match; other tasks always show.
+// The choice is saved per cycle and day in task_progress with session 'mode' (done=true means match).
+function taskTag(t){const s=String(t);if(/^\s*(if\s+)?no[\s-]*match\s*:/i.test(s))return 'nomatch';if(/^\s*(if\s+)?match\s*:/i.test(s))return 'match';return null;}
+function stripTag(t){return String(t).replace(/^\s*(if\s+)?(no[\s-]*)?match\s*:\s*/i,'');}
+function hasModes(n){const d=dayData(n);return parseTasks(d.am_tasks).concat(parseTasks(d.pm_tasks)).some(t=>taskTag(t));}
+function dayMode(n){const r=S.task_progress.find(t=>t.day_num===n&&t.session==='mode'&&t.task_index===0);return r?(r.done?'match':'nomatch'):null;}
+function visibleTasks(n,sess){const d=dayData(n);const all=parseTasks(sess==='am'?d.am_tasks:d.pm_tasks);const m=dayMode(n);const out=[];all.forEach((t,i)=>{const g=taskTag(t);if(!g||g===m)out.push({t:stripTag(t),i});});return out;}
+function setMode(n,m){upsertTP(n,'mode',0,m==='match');renderToday();api('/api/task',{cycle_id:cid(),day_num:n,session:'mode',task_index:0,done:m==='match'}).catch(()=>toast('Save failed'));}
+function renderModeBar(){const el=$('modeBar');if(!el)return;if(!hasModes(cur)){el.innerHTML='';return;}const m=dayMode(cur);el.innerHTML='<div class="modebar"><h3>Playing a match?</h3><div class="modebtns"><button id="modeMatch" class="'+(m==='match'?'on':'')+'">Match</button><button id="modeNoMatch" class="'+(m==='nomatch'?'on':'')+'">No match</button></div>'+(m?'':'<p class="modehint">Choose one to see today\u2019s tasks.</p>')+'</div>';$('modeMatch').onclick=()=>setMode(cur,'match');$('modeNoMatch').onclick=()=>setMode(cur,'nomatch');}
 function dayData(n){return S.days.find(d=>d.day_num===n)||{day_num:n,title:'',am_tasks:[],pm_tasks:[],is_rest:false,week:WEEK(n)};}
 function taskDone(n,s,i){const r=S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);return r?r.done:false;}
 function checkDone(n,i){const r=S.checklist.find(c=>c.day_num===n&&c.item_index===i);return r?r.done:false;}
-function dayCompletion(n){const d=dayData(n);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);const total=am.length+pm.length;if(!total)return {done:0,total:0,pct:0};let done=0;am.forEach((_,i)=>{if(taskDone(n,'am',i))done++;});pm.forEach((_,i)=>{if(taskDone(n,'pm',i))done++;});return {done,total,pct:Math.round(done/total*100)};}
+function dayCompletion(n){const am=visibleTasks(n,'am'),pm=visibleTasks(n,'pm');const total=am.length+pm.length;if(!total)return {done:0,total:0,pct:0};let done=0;am.forEach(x=>{if(taskDone(n,'am',x.i))done++;});pm.forEach(x=>{if(taskDone(n,'pm',x.i))done++;});return {done,total,pct:Math.round(done/total*100)};}
 function computeToday(){
 if(!S.cycle||!S.cycle.start_date){todayDay=1;return;}
 const start=new Date(String(S.cycle.start_date).slice(0,10)+'T00:00:00');
@@ -214,11 +231,11 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function renderCard(n,sess,tasks){
 const cls=sess==='am'?'am':'pm';
 const title=sess==='am'?'Morning':'Evening';
-let done=0;tasks.forEach((_,i)=>{if(taskDone(n,sess,i))done++;});
+let done=0;tasks.forEach(x=>{if(taskDone(n,sess,x.i))done++;});
 let h='<div class="card '+cls+'"><div class="cardhead"><span class="dot"></span><h3>'+title+'</h3><span class="count">'+done+'/'+tasks.length+'</span></div>';
-tasks.forEach((t,i)=>{
-const dn=taskDone(n,sess,i);
-h+='<div class="task'+(dn?' done':'')+'" data-sess="'+sess+'" data-i="'+i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(t)+'</div></div>';
+tasks.forEach(x=>{
+const dn=taskDone(n,sess,x.i);
+h+='<div class="task'+(dn?' done':'')+'" data-sess="'+sess+'" data-i="'+x.i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(x.t)+'</div></div>';
 });
 h+='</div>';
 return h;
@@ -245,10 +262,11 @@ el.onclick=()=>{const i=+el.dataset.chk;setCheck(cur,i,!checkDone(cur,i));};
 }
 function renderToday(){
 const d=dayData(cur);
-const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
+const am=visibleTasks(cur,'am'),pm=visibleTasks(cur,'pm');
 $('dayNumLbl').textContent=dayName(cur);
 $('dayTitleLbl').textContent=d.title||'';
 let pills=d.is_rest?'<span class="rest-pill">REST DAY</span>':'';
+if(hasModes(cur)&&dayMode(cur))pills+='<span class="rest-pill">'+(dayMode(cur)==='match'?'MATCH':'NO MATCH')+'</span>';
 if(cur===todayDay)pills+='<span class="today-pill">TODAY</span>';
 $('restLbl').innerHTML=pills;
 const c=dayCompletion(cur);
@@ -256,8 +274,9 @@ $('ringPct').textContent=c.pct+'%';
 $('ringTitle').textContent=d.title||dayName(cur);
 $('ringSub').textContent=c.done+' of '+c.total+' tasks complete';
 $('ringArc').style.strokeDashoffset=264-264*(c.pct/100);
-$('amCard').innerHTML=renderCard(cur,'am',am);
-$('pmCard').innerHTML=renderCard(cur,'pm',pm);
+renderModeBar();
+$('amCard').innerHTML=am.length?renderCard(cur,'am',am):'';
+$('pmCard').innerHTML=pm.length?renderCard(cur,'pm',pm):'';
 bindTasks();
 const w=S.weights.find(x=>x.day_num===cur);
 $('weightInput').value=w?w.weight_kg:'';
@@ -293,7 +312,7 @@ let h='';
 for(let n=1;n<=14;n++){
 const d=dayData(n);
 const c=dayCompletion(n);
-h+='<div class="planrow'+(n===todayDay?' istoday':'')+'" data-day="'+n+'"><div class="num">'+esc(dayName(n))+'</div><div class="mid"><div class="pt">'+esc(d.title||dayName(n))+(n===todayDay?' · TODAY':'')+'</div><div class="pw">Week '+(d.week||WEEK(n))+(d.is_rest?' · Rest day':'')+' · '+c.done+'/'+c.total+'</div><div class="bar"><i style="width:'+c.pct+'%"></i></div></div></div>';
+h+='<div class="planrow'+(n===todayDay?' istoday':'')+'" data-day="'+n+'"><div class="num">'+esc(dayName(n))+'</div><div class="mid"><div class="pt">'+esc(d.title||dayName(n))+(n===todayDay?' · TODAY':'')+'</div><div class="pw">Week '+(d.week||WEEK(n))+(d.is_rest?' · Rest day':'')+(hasModes(n)?(dayMode(n)==='match'?' · Match':dayMode(n)==='nomatch'?' · No match':' · Match not chosen'):'')+' · '+c.done+'/'+c.total+'</div><div class="bar"><i style="width:'+c.pct+'%"></i></div></div></div>';
 }
 $('planList').innerHTML=h;
 $('planList').querySelectorAll('[data-day]').forEach(el=>{
@@ -355,15 +374,15 @@ if(t==='plan')renderPlan();
 if(t==='summary')renderSummary();
 }
 function markAll(){
-const d=dayData(cur);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
-am.forEach((_,i)=>{if(!taskDone(cur,'am',i)){upsertTP(cur,'am',i,true);api('/api/task',{cycle_id:cid(),day_num:cur,session:'am',task_index:i,done:true});}});
-pm.forEach((_,i)=>{if(!taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,true);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:true});}});
+const am=visibleTasks(cur,'am').map(x=>x.i),pm=visibleTasks(cur,'pm').map(x=>x.i);
+am.forEach(i=>{if(!taskDone(cur,'am',i)){upsertTP(cur,'am',i,true);api('/api/task',{cycle_id:cid(),day_num:cur,session:'am',task_index:i,done:true});}});
+pm.forEach(i=>{if(!taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,true);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:true});}});
 renderToday();toast('All tasks marked done');
 }
 function resetDay(){
-const d=dayData(cur);const am=parseTasks(d.am_tasks),pm=parseTasks(d.pm_tasks);
-am.forEach((_,i)=>{if(taskDone(cur,'am',i)){upsertTP(cur,'am',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'am',task_index:i,done:false});}});
-pm.forEach((_,i)=>{if(taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:false});}});
+const am=visibleTasks(cur,'am').map(x=>x.i),pm=visibleTasks(cur,'pm').map(x=>x.i);
+am.forEach(i=>{if(taskDone(cur,'am',i)){upsertTP(cur,'am',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'am',task_index:i,done:false});}});
+pm.forEach(i=>{if(taskDone(cur,'pm',i)){upsertTP(cur,'pm',i,false);api('/api/task',{cycle_id:cid(),day_num:cur,session:'pm',task_index:i,done:false});}});
 renderToday();toast('Day reset');
 }
 function saveWeight(){
