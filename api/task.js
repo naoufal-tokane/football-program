@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (!auth) return json(res, 401, { error: 'Not authenticated' });
   try {
     const { cycle_id, day_num, session, task_index, done } = await readBody(req);
-    if (cycle_id == null || day_num == null || !['am','pm'].includes(session) || task_index == null)
+    if (cycle_id == null || day_num == null || !['am','pm','mode'].includes(session) || task_index == null)
       return json(res, 400, { error: 'Invalid payload' });
     const own = await sql`SELECT id FROM cycles WHERE id = ${cycle_id} AND user_id = ${auth.id}`;
     if (!own[0]) return json(res, 403, { error: 'Forbidden' });
