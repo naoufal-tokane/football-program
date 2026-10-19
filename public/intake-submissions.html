@@ -36,7 +36,8 @@
 
   function card(r) {
     const a = r.answers || {};
-    const bits = [a.goal === 'Other' ? a.goal_other : a.goal, a.sport === 'Other' ? a.sport_other : a.sport].filter(Boolean).join(' · ');
+    const pick = (v, o) => [].concat(v || []).filter((x) => x !== 'Other').concat(o ? [o] : []).join(', ');
+    const bits = [pick(a.goal, a.goal_other), pick(a.sport, a.sport_other)].filter(Boolean).join(' · ');
     let body = '';
     for (const [title, fields] of INTAKE.SECTIONS) {
       const kv = fields.filter(([k]) => !INTAKE.empty(a[k])).map(([k, l]) => '<div class="kv"><span>' + esc(l) + '</span><span>' + esc(INTAKE.fmt(a[k])) + '</span></div>').join('');
