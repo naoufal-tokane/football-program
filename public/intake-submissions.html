@@ -10,7 +10,7 @@
 <body>
 <header class="header">
   <h1>Intake submissions</h1>
-  <p><a href="/">← Back to program</a> · <a href="/intake" target="_blank">Open form</a> · <a href="#" id="shareLink">Copy form link</a></p>
+  <p><a href="/">← Back to program</a> · <a href="/intake" target="_blank">Open form</a> · <a href="#" id="shareLink">Copy form link</a> · <a href="#" id="shareLinkAr">Copy Darija link</a></p>
 </header>
 <main class="wrap">
   <div class="toolbar" id="toolbar" hidden>
@@ -32,6 +32,13 @@
     const ok = await INTAKE.copy(location.origin + '/intake');
     e.target.textContent = ok ? 'Link copied ✓' : location.origin + '/intake';
     setTimeout(() => (e.target.textContent = 'Copy form link'), 2000);
+  };
+
+  $('shareLinkAr').onclick = async (e) => {
+    e.preventDefault();
+    const ok = await INTAKE.copy(location.origin + '/intake?lang=ar');
+    e.target.textContent = ok ? 'Link copied ✓' : location.origin + '/intake?lang=ar';
+    setTimeout(() => (e.target.textContent = 'Copy Darija link'), 2000);
   };
 
   function card(r) {
