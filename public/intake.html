@@ -10,15 +10,22 @@
 <body>
 <header class="header">
   <h1>Athlete Intake</h1>
-  <p>Tell us about yourself so we can build your program.</p>
+  <p id="stepHint">Step 1 of 4 · About you</p>
+  <div class="progress"><div class="bar" id="progBar"></div></div>
+  <div class="steps" id="stepDots">
+    <button type="button" data-go="0" class="on">About</button>
+    <button type="button" data-go="1">Training</button>
+    <button type="button" data-go="2">Nutrition</button>
+    <button type="button" data-go="3">Review</button>
+  </div>
 </header>
 
 <main class="wrap">
 <form id="intakeForm" novalidate>
   <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"/>
 
-  <!-- ABOUT -->
-  <section class="card">
+  <!-- STEP 1: ABOUT -->
+  <section class="card step active" data-step="0">
     <h2><span class="num">1</span>About you</h2>
 
     <div class="grid2">
@@ -28,21 +35,22 @@
 
     <div class="grid2">
       <div class="field"><label for="age">Age</label><input id="age" name="age" type="number" inputmode="numeric" min="10" max="100" placeholder="25"/></div>
-      <div class="field"><label for="height_cm">Height (cm)</label><input id="height_cm" name="height_cm" type="number" inputmode="decimal" step="0.1" placeholder="178"/></div>
-      <div class="field"><label for="weight_kg">Current weight (kg)</label><input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" step="0.1" placeholder="75"/></div>
       <div class="field"><label>Sex</label>
         <div class="chips"><label><input type="radio" name="sex" value="Male"><span>Male</span></label><label><input type="radio" name="sex" value="Female"><span>Female</span></label></div>
       </div>
+      <div class="field"><label for="height_cm">Height (cm)</label><input id="height_cm" name="height_cm" type="number" inputmode="decimal" step="0.1" placeholder="178"/></div>
+      <div class="field"><label for="weight_kg">Current weight (kg)</label><input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" step="0.1" placeholder="75"/></div>
     </div>
+    <div class="live" id="bmiBox" hidden></div>
 
-    <div class="field"><label>Main goal</label>
-      <div class="chips" data-other="goal">
-        <label><input type="radio" name="goal" value="Fat loss"><span>Fat loss</span></label>
-        <label><input type="radio" name="goal" value="Muscle gain"><span>Muscle gain</span></label>
-        <label><input type="radio" name="goal" value="Body recomposition"><span>Recomposition</span></label>
-        <label><input type="radio" name="goal" value="Sports performance"><span>Sports performance</span></label>
-        <label><input type="radio" name="goal" value="Maintenance"><span>Maintenance</span></label>
-        <label><input type="radio" name="goal" value="Other"><span>Other</span></label>
+    <div class="field"><label>Main goal <em>select all that apply</em></label>
+      <div class="chips multi">
+        <label><input type="checkbox" name="goal" value="Fat loss"><span>🔥 Fat loss</span></label>
+        <label><input type="checkbox" name="goal" value="Muscle gain"><span>💪 Muscle gain</span></label>
+        <label><input type="checkbox" name="goal" value="Body recomposition"><span>⚖️ Recomposition</span></label>
+        <label><input type="checkbox" name="goal" value="Sports performance"><span>⚡ Sports performance</span></label>
+        <label><input type="checkbox" name="goal" value="Maintenance"><span>🎯 Maintenance</span></label>
+        <label><input type="checkbox" name="goal" value="Other"><span>Other</span></label>
       </div>
       <input name="goal_other" class="other" data-for="goal" placeholder="Describe your goal" hidden/>
     </div>
@@ -51,27 +59,34 @@
       <div class="field"><label for="target_weight_kg">Target weight (kg)</label><input id="target_weight_kg" name="target_weight_kg" type="number" inputmode="decimal" step="0.1" placeholder="optional"/></div>
       <div class="field"><label for="timeline">Timeline</label><input id="timeline" name="timeline" placeholder="e.g. 12 weeks, before season"/></div>
     </div>
+    <div class="live" id="targetBox" hidden></div>
   </section>
 
-  <!-- TRAINING -->
-  <section class="card">
+  <!-- STEP 2: TRAINING -->
+  <section class="card step" data-step="1">
     <h2><span class="num">2</span>Training</h2>
 
-    <div class="field"><label>Sport / context</label>
-      <div class="chips" data-other="sport">
-        <label><input type="radio" name="sport" value="Football / soccer"><span>Football / soccer</span></label>
-        <label><input type="radio" name="sport" value="Gym only"><span>Gym only</span></label>
-        <label><input type="radio" name="sport" value="General fitness"><span>General fitness</span></label>
-        <label><input type="radio" name="sport" value="Running"><span>Running</span></label>
-        <label><input type="radio" name="sport" value="Other"><span>Other</span></label>
+    <div class="field"><label>Sport / context <em>select all that apply</em></label>
+      <div class="chips multi">
+        <label><input type="checkbox" name="sport" value="Football / soccer"><span>⚽ Football / soccer</span></label>
+        <label><input type="checkbox" name="sport" value="Gym only"><span>🏋️ Gym only</span></label>
+        <label><input type="checkbox" name="sport" value="General fitness"><span>🤸 General fitness</span></label>
+        <label><input type="checkbox" name="sport" value="Running"><span>🏃 Running</span></label>
+        <label><input type="checkbox" name="sport" value="Other"><span>Other</span></label>
       </div>
       <input name="sport_other" class="other" data-for="sport" placeholder="Which sport / context?" hidden/>
     </div>
 
-    <div class="grid2">
-      <div class="field"><label for="days_per_week">Days per week</label><input id="days_per_week" name="days_per_week" type="number" inputmode="numeric" min="1" max="7" placeholder="4"/></div>
-      <div class="field"><label for="session_minutes">Minutes per session</label><input id="session_minutes" name="session_minutes" type="number" inputmode="numeric" min="10" max="300" step="5" placeholder="60"/></div>
+    <div class="field"><label>Days per week <b class="val" id="daysVal">4 days</b></label>
+      <input type="range" name="days_per_week" id="days_per_week" min="1" max="7" value="4"/>
+      <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
     </div>
+
+    <div class="field"><label>Time per session <b class="val" id="minVal">60 min</b></label>
+      <input type="range" name="session_minutes" id="session_minutes" min="20" max="150" step="5" value="60"/>
+      <div class="ticks"><span>20</span><span>60</span><span>105</span><span>150</span></div>
+    </div>
+    <div class="live" id="volumeBox"></div>
 
     <div class="field"><label>Team sessions or fixed commitments to build around?</label>
       <div class="chips">
@@ -79,7 +94,7 @@
         <label><input type="radio" name="has_commitments" value="No"><span>No</span></label>
       </div>
     </div>
-    <div id="commitBox" hidden>
+    <div id="commitBox" class="reveal" hidden>
       <div class="field"><label>Which days?</label>
         <div class="chips days">
           <label><input type="checkbox" name="commitment_days" value="Mon"><span>Mon</span></label>
@@ -94,11 +109,11 @@
       <div class="field"><label for="commitment_details">Details</label><input id="commitment_details" name="commitment_details" placeholder="e.g. Team session 11:30 Tue/Thu, match Sunday"/></div>
     </div>
 
-    <div class="field"><label>Equipment access</label>
-      <div class="chips">
-        <label><input type="radio" name="equipment" value="Full gym"><span>Full gym</span></label>
-        <label><input type="radio" name="equipment" value="Home / minimal"><span>Home / minimal</span></label>
-        <label><input type="radio" name="equipment" value="Bodyweight only"><span>Bodyweight only</span></label>
+    <div class="field"><label>Equipment access <em>select all that apply</em></label>
+      <div class="chips multi">
+        <label><input type="checkbox" name="equipment" value="Full gym"><span>🏢 Full gym</span></label>
+        <label><input type="checkbox" name="equipment" value="Home / minimal"><span>🏠 Home / minimal</span></label>
+        <label><input type="checkbox" name="equipment" value="Bodyweight only"><span>🙌 Bodyweight only</span></label>
       </div>
     </div>
 
@@ -112,19 +127,19 @@
 
     <div class="field"><label for="injuries">Injuries, limitations or exercises to avoid</label><textarea id="injuries" name="injuries" rows="3" placeholder="None, or describe…"></textarea></div>
 
-    <div class="field"><label>Emphasis</label>
-      <div class="chips">
-        <label><input type="radio" name="emphasis" value="Strength"><span>Strength</span></label>
-        <label><input type="radio" name="emphasis" value="Conditioning / speed"><span>Conditioning / speed</span></label>
-        <label><input type="radio" name="emphasis" value="Mobility"><span>Mobility</span></label>
-        <label><input type="radio" name="emphasis" value="Balanced"><span>Balanced</span></label>
+    <div class="field"><label>Emphasis <em>select all that apply</em></label>
+      <div class="chips multi">
+        <label><input type="checkbox" name="emphasis" value="Strength"><span>Strength</span></label>
+        <label><input type="checkbox" name="emphasis" value="Conditioning / speed"><span>Conditioning / speed</span></label>
+        <label><input type="checkbox" name="emphasis" value="Mobility"><span>Mobility</span></label>
+        <label><input type="checkbox" name="emphasis" value="Balanced"><span>Balanced</span></label>
       </div>
       <input name="emphasis_notes" class="mt" placeholder="Anything else? (optional)"/>
     </div>
   </section>
 
-  <!-- NUTRITION -->
-  <section class="card">
+  <!-- STEP 3: NUTRITION -->
+  <section class="card step" data-step="2">
     <h2><span class="num">3</span>Nutrition goals</h2>
 
     <div class="field"><label>Daily macro targets</label>
@@ -134,30 +149,31 @@
       </div>
     </div>
 
-    <div id="ownTargets" hidden>
+    <div id="ownTargets" class="reveal" hidden>
       <div class="grid2">
         <div class="field"><label for="protein_g">Protein (g)</label><input id="protein_g" name="protein_g" type="number" inputmode="decimal" placeholder="160"/></div>
         <div class="field"><label for="carbs_g">Carbs (g)</label><input id="carbs_g" name="carbs_g" type="number" inputmode="decimal" placeholder="300"/></div>
         <div class="field"><label for="fats_g">Fats (g)</label><input id="fats_g" name="fats_g" type="number" inputmode="decimal" placeholder="70"/></div>
         <div class="field"><label for="calories">Calories (auto)</label><input id="calories" name="calories" type="number" readonly placeholder="auto"/></div>
       </div>
+      <div class="macrobar" id="macroBar" hidden><i class="p"></i><i class="c"></i><i class="f"></i></div>
+      <div class="macrolegend" id="macroLegend"></div>
     </div>
 
-    <div id="calcTargets" hidden>
-      <div class="field"><label for="activity_level">Activity level</label>
-        <select id="activity_level" name="activity_level">
-          <option value="">Select…</option>
-          <option>Sedentary (desk job, little exercise)</option>
-          <option>Lightly active (1–3 sessions/week)</option>
-          <option>Moderately active (3–5 sessions/week)</option>
-          <option>Very active (6–7 sessions/week)</option>
-          <option>Extremely active (2x/day or physical job)</option>
-        </select>
+    <div id="calcTargets" class="reveal" hidden>
+      <div class="field"><label>Activity level</label>
+        <div class="levels">
+          <label><input type="radio" name="activity_level" value="Sedentary"><span><b>Sedentary</b><small>Desk job, little exercise</small></span></label>
+          <label><input type="radio" name="activity_level" value="Lightly active"><span><b>Lightly active</b><small>1–3 sessions / week</small></span></label>
+          <label><input type="radio" name="activity_level" value="Moderately active"><span><b>Moderately active</b><small>3–5 sessions / week</small></span></label>
+          <label><input type="radio" name="activity_level" value="Very active"><span><b>Very active</b><small>6–7 sessions / week</small></span></label>
+          <label><input type="radio" name="activity_level" value="Extremely active"><span><b>Extremely active</b><small>2x / day or physical job</small></span></label>
+        </div>
       </div>
     </div>
 
     <div class="field"><label>Dietary preferences / restrictions</label>
-      <div class="chips">
+      <div class="chips multi">
         <label><input type="checkbox" name="diet" value="None"><span>None</span></label>
         <label><input type="checkbox" name="diet" value="Vegetarian"><span>Vegetarian</span></label>
         <label><input type="checkbox" name="diet" value="Vegan"><span>Vegan</span></label>
@@ -169,11 +185,26 @@
       <input name="diet_other" class="mt" placeholder="Allergies or other restrictions"/>
     </div>
 
-    <div class="field"><label for="water_ml">Water target (ml)</label><input id="water_ml" name="water_ml" type="number" inputmode="numeric" step="100" value="3000"/></div>
+    <div class="field"><label>Water target <b class="val" id="waterVal">3.0 L</b></label>
+      <input type="range" name="water_ml" id="water_ml" min="1500" max="5000" step="250" value="3000"/>
+      <div class="glasses" id="glasses"></div>
+    </div>
+  </section>
+
+  <!-- STEP 4: REVIEW -->
+  <section class="card step" data-step="3">
+    <h2><span class="num">4</span>Review</h2>
+    <p class="muted">Check your answers. Tap a section to edit it.</p>
+    <div id="review"></div>
   </section>
 
   <div class="err" id="formErr"></div>
-  <button type="submit" class="primary" id="submitBtn">Submit</button>
+  <div class="nav">
+    <button type="button" class="ghost" id="backBtn" hidden>← Back</button>
+    <button type="button" class="primary" id="nextBtn">Next →</button>
+    <button type="submit" class="primary" id="submitBtn" hidden>Submit</button>
+  </div>
+  <p class="saved" id="savedNote"></p>
 </form>
 
 <section id="doneBox" class="card done" hidden>
@@ -194,35 +225,15 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const form = $('intakeForm');
-  let last = null;
+  const steps = [...document.querySelectorAll('.step')];
+  const NAMES = ['About you', 'Training', 'Nutrition', 'Review'];
+  const MULTI = ['goal', 'sport', 'equipment', 'emphasis', 'commitment_days', 'diet'];
+  const DRAFT = 'fp_intake_draft';
+  let cur = 0, last = null;
 
-  // "Other" text inputs + conditional sections
-  function sync() {
-    document.querySelectorAll('.other').forEach((inp) => {
-      const sel = form.querySelector('input[name="' + inp.dataset.for + '"]:checked');
-      inp.hidden = !(sel && sel.value === 'Other');
-    });
-    const c = form.querySelector('input[name="has_commitments"]:checked');
-    $('commitBox').hidden = !(c && c.value === 'Yes');
-    const t = form.querySelector('input[name="targets_mode"]:checked');
-    $('ownTargets').hidden = !(t && t.value === 'I have my own targets');
-    $('calcTargets').hidden = !(t && t.value === 'Calculate for me');
-  }
-  form.addEventListener('change', (e) => {
-    // "None" diet is exclusive
-    if (e.target.name === 'diet') {
-      const boxes = form.querySelectorAll('input[name="diet"]');
-      if (e.target.value === 'None' && e.target.checked) boxes.forEach((b) => { if (b !== e.target) b.checked = false; });
-      else if (e.target.checked) boxes.forEach((b) => { if (b.value === 'None') b.checked = false; });
-    }
-    sync();
-  });
-
-  // Calories from macros (4/4/9), same as the main app
-  ['protein_g', 'carbs_g', 'fats_g'].forEach((id) => $(id).addEventListener('input', () => {
-    const p = +$('protein_g').value || 0, c = +$('carbs_g').value || 0, f = +$('fats_g').value || 0;
-    $('calories').value = p || c || f ? Math.round(p * 4 + c * 4 + f * 9) : '';
-  }));
+  // ---------- helpers ----------
+  const checked = (name) => [...form.querySelectorAll('input[name="' + name + '"]:checked')].map((i) => i.value);
+  const num = (id) => parseFloat($(id).value) || 0;
 
   function collect() {
     const fd = new FormData(form);
@@ -230,10 +241,9 @@
     for (const [k, v] of fd.entries()) {
       if (k === 'website') continue;
       const val = String(v).trim();
-      if (k === 'commitment_days' || k === 'diet') { (a[k] = a[k] || []).push(val); continue; }
+      if (MULTI.includes(k)) { (a[k] = a[k] || []).push(val); continue; }
       if (val !== '') a[k] = val;
     }
-    // Drop answers from hidden branches
     document.querySelectorAll('.other[hidden]').forEach((i) => delete a[i.name]);
     if (a.has_commitments !== 'Yes') { delete a.commitment_days; delete a.commitment_details; }
     if (a.targets_mode !== 'I have my own targets') ['protein_g', 'carbs_g', 'fats_g', 'calories'].forEach((k) => delete a[k]);
@@ -241,11 +251,152 @@
     return a;
   }
 
+  // ---------- live widgets ----------
+  function live() {
+    // "Other" inputs
+    document.querySelectorAll('.other').forEach((inp) => { inp.hidden = !checked(inp.dataset.for).includes('Other'); });
+    const c = checked('has_commitments')[0];
+    $('commitBox').hidden = c !== 'Yes';
+    const t = checked('targets_mode')[0];
+    $('ownTargets').hidden = t !== 'I have my own targets';
+    $('calcTargets').hidden = t !== 'Calculate for me';
+
+    // BMI
+    const h = num('height_cm') / 100, w = num('weight_kg');
+    if (h > 1 && w > 20) {
+      const bmi = w / (h * h);
+      const cat = bmi < 18.5 ? ['Underweight', 'warn'] : bmi < 25 ? ['Normal range', 'ok'] : bmi < 30 ? ['Above normal', 'warn'] : ['High', 'bad'];
+      $('bmiBox').innerHTML = 'BMI <b>' + bmi.toFixed(1) + '</b> <span class="tag ' + cat[1] + '">' + cat[0] + '</span>';
+      $('bmiBox').hidden = false;
+    } else $('bmiBox').hidden = true;
+
+    // Target diff
+    const tw = num('target_weight_kg');
+    if (w > 20 && tw > 20) {
+      const d = tw - w;
+      $('targetBox').innerHTML = Math.abs(d) < 0.05 ? 'Target equals current weight' :
+        '<b>' + (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + ' kg</b> ' + (d > 0 ? 'to gain' : 'to lose');
+      $('targetBox').hidden = false;
+    } else $('targetBox').hidden = true;
+
+    // Sliders
+    const days = +$('days_per_week').value, mins = +$('session_minutes').value;
+    $('daysVal').textContent = days + (days === 1 ? ' day' : ' days');
+    $('minVal').textContent = mins >= 150 ? '150+ min' : mins + ' min';
+    const tot = days * mins;
+    $('volumeBox').innerHTML = '≈ <b>' + (tot / 60).toFixed(1).replace('.0', '') + ' h</b> of training per week';
+    fill($('days_per_week')); fill($('session_minutes')); fill($('water_ml'));
+
+    // Water
+    const ml = +$('water_ml').value;
+    $('waterVal').textContent = parseFloat((ml / 1000).toFixed(2)).toString() + ' L';
+    const n = Math.round(ml / 250);
+    $('glasses').innerHTML = '💧'.repeat(n) + '<small>' + n + ' glasses of 250 ml</small>';
+
+    // Macros
+    const p = num('protein_g'), cb = num('carbs_g'), f = num('fats_g');
+    const kcal = p * 4 + cb * 4 + f * 9;
+    $('calories').value = kcal ? Math.round(kcal) : '';
+    if (kcal) {
+      const pc = (x) => (x / kcal * 100);
+      const bar = $('macroBar').children;
+      bar[0].style.width = pc(p * 4) + '%'; bar[1].style.width = pc(cb * 4) + '%'; bar[2].style.width = pc(f * 9) + '%';
+      $('macroBar').hidden = false;
+      $('macroLegend').innerHTML = '<span class="p">Protein ' + Math.round(pc(p * 4)) + '%</span><span class="c">Carbs ' + Math.round(pc(cb * 4)) + '%</span><span class="f">Fats ' + Math.round(pc(f * 9)) + '%</span>' +
+        (w > 20 && p ? '<span>' + (p / w).toFixed(1) + ' g protein / kg</span>' : '');
+    } else { $('macroBar').hidden = true; $('macroLegend').innerHTML = ''; }
+  }
+  function fill(r) { const pct = (r.value - r.min) / (r.max - r.min) * 100; r.style.setProperty('--pct', pct + '%'); }
+
+  // ---------- steps ----------
+  function show(i) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => s.classList.toggle('active', k === cur));
+    document.querySelectorAll('#stepDots button').forEach((b, k) => { b.classList.toggle('on', k === cur); b.classList.toggle('done', k < cur); });
+    $('progBar').style.width = ((cur + 1) / steps.length * 100) + '%';
+    $('stepHint').textContent = 'Step ' + (cur + 1) + ' of ' + steps.length + ' · ' + NAMES[cur];
+    $('backBtn').hidden = cur === 0;
+    $('nextBtn').hidden = cur === steps.length - 1;
+    $('submitBtn').hidden = cur !== steps.length - 1;
+    $('formErr').textContent = '';
+    if (cur === steps.length - 1) renderReview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function valid(i) { return !(i === 0 && !$('full_name').value.trim()); }
+  function fail(k) {
+    if (k !== cur) show(k);
+    $('formErr').textContent = 'Please enter a name to continue.';
+    $('full_name').classList.add('bad'); $('full_name').focus();
+  }
+  function go(i) { if (i > cur) { for (let k = 0; k < i; k++) if (!valid(k)) return fail(k); } show(i); }
+  $('nextBtn').onclick = () => go(cur + 1);
+  $('backBtn').onclick = () => show(cur - 1);
+  document.querySelectorAll('#stepDots button').forEach((b) => (b.onclick = () => go(+b.dataset.go)));
+  $('full_name').addEventListener('input', (e) => e.target.classList.remove('bad'));
+  form.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT' && cur < steps.length - 1) { e.preventDefault(); go(cur + 1); }
+  });
+
+  function renderReview() {
+    const a = collect();
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    $('review').innerHTML = INTAKE.SECTIONS.map(([title, fields], i) => {
+      const rows = fields.filter(([k]) => !INTAKE.empty(a[k])).map(([k, l]) => '<div class="kv"><span>' + esc(l) + '</span><span>' + esc(INTAKE.fmt(a[k])) + '</span></div>').join('');
+      return '<div class="revsec" data-go="' + i + '"><h4>' + esc(title) + ' <small>Edit</small></h4>' + (rows || '<div class="muted">Nothing filled in</div>') + '</div>';
+    }).join('');
+    $('review').querySelectorAll('.revsec').forEach((el) => (el.onclick = () => show(+el.dataset.go)));
+  }
+
+  // ---------- draft autosave ----------
+  function saveDraft() {
+    try {
+      localStorage.setItem(DRAFT, JSON.stringify(collectRaw()));
+      $('savedNote').textContent = 'Draft saved on this device';
+    } catch (e) {}
+  }
+  function collectRaw() {
+    const o = {};
+    form.querySelectorAll('input,select,textarea').forEach((el) => {
+      if (!el.name || el.name === 'website') return;
+      if (el.type === 'checkbox' || el.type === 'radio') { if (el.checked) (o[el.name] = o[el.name] || []).push(el.value); }
+      else o[el.name] = el.value;
+    });
+    return o;
+  }
+  function loadDraft() {
+    let o; try { o = JSON.parse(localStorage.getItem(DRAFT) || 'null'); } catch (e) {}
+    if (!o) return;
+    form.querySelectorAll('input,select,textarea').forEach((el) => {
+      if (!(el.name in o)) return;
+      if (el.type === 'checkbox' || el.type === 'radio') el.checked = o[el.name].includes(el.value);
+      else el.value = o[el.name];
+    });
+    $('savedNote').textContent = 'Restored your saved draft';
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT); } catch (e) {} $('savedNote').textContent = ''; }
+
+  let t;
+  form.addEventListener('input', () => { live(); clearTimeout(t); t = setTimeout(saveDraft, 400); });
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'diet') {
+      const boxes = form.querySelectorAll('input[name="diet"]');
+      if (e.target.value === 'None' && e.target.checked) boxes.forEach((b) => { if (b !== e.target) b.checked = false; });
+      else if (e.target.checked) boxes.forEach((b) => { if (b.value === 'None') b.checked = false; });
+    }
+    if (e.target.name === 'emphasis') {
+      const boxes = form.querySelectorAll('input[name="emphasis"]');
+      if (e.target.value === 'Balanced' && e.target.checked) boxes.forEach((b) => { if (b !== e.target) b.checked = false; });
+      else if (e.target.checked) boxes.forEach((b) => { if (b.value === 'Balanced') b.checked = false; });
+    }
+    live(); saveDraft();
+  });
+
+  // ---------- submit ----------
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    $('formErr').textContent = '';
+    if (cur !== steps.length - 1) return go(cur + 1);
+    if (!valid(0)) return fail(0);
     const answers = collect();
-    if (!answers.full_name) { $('formErr').textContent = 'Please enter a name.'; $('full_name').focus(); return; }
     const btn = $('submitBtn');
     btn.disabled = true; btn.textContent = 'Sending…';
     try {
@@ -254,7 +405,10 @@
       if (!r.ok) throw new Error(d.error || 'Something went wrong');
       last = { answers, created_at: d.created_at || new Date().toISOString() };
       $('summary').textContent = INTAKE.toText(answers, last);
-      form.hidden = true; $('doneBox').hidden = false;
+      clearDraft();
+      form.hidden = true; document.querySelector('.steps').hidden = true; $('progBar').style.width = '100%';
+      $('stepHint').textContent = 'Done';
+      $('doneBox').hidden = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       $('formErr').textContent = err.message === 'Failed to fetch' ? 'Network error, please try again.' : err.message;
@@ -268,9 +422,13 @@
     setTimeout(() => ($('copyBtn').textContent = 'Copy answers'), 1500);
   };
   $('dlBtn').onclick = () => last && INTAKE.download('intake-' + INTAKE.slug(last.answers.full_name) + '.json', JSON.stringify(last, null, 2));
-  $('againBtn').onclick = () => { form.reset(); sync(); $('doneBox').hidden = true; form.hidden = false; window.scrollTo(0, 0); };
+  $('againBtn').onclick = () => {
+    form.reset(); clearDraft(); live();
+    $('doneBox').hidden = true; form.hidden = false; document.querySelector('.steps').hidden = false; show(0);
+  };
 
-  sync();
+  window.addEventListener('pagehide', () => { if (!form.hidden) saveDraft(); });
+  loadDraft(); live(); show(0);
 })();
 </script>
 </body>
