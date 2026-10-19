@@ -50,6 +50,14 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 .metric{display:flex;align-items:center;gap:4px;flex:0 0 auto}
 .metric input{width:64px;background:#0e141b;border:1px solid var(--border);border-radius:9px;color:var(--text);padding:7px 8px;font-size:14px;text-align:right}
 .metric span{font-size:11px;color:var(--muted)}
+.metric{flex-direction:column;align-items:flex-end;gap:4px}
+.metric .mf{display:flex;align-items:center;gap:4px}
+.rec{font-size:11.5px;color:var(--muted);margin-top:3px}
+.rec .pr{color:#22c55e}
+.task.done .rec{text-decoration:none}
+.prrow{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.prrow:first-child{border-top:none}
+.prrow span:last-child{color:var(--muted);text-align:right}
 .circuit{background:#0e141b;border:1px solid var(--border);border-radius:14px;padding:14px;margin:8px 0 10px}
 .ct-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .ct-phase{color:var(--am)}
@@ -191,6 +199,10 @@ body{max-width:520px;margin:0 auto;padding-bottom:120px;min-height:100vh}
 <button class="btn-primary" id="finishCycle">Finish cycle · Start new</button>
 </div>
 <div class="sumcard">
+<h3>Personal records</h3>
+<div id="prList"></div>
+</div>
+<div class="sumcard">
 <h3>History</h3>
 <div id="histList"></div>
 </div>
@@ -251,14 +263,46 @@ function metricKind(t){const s=String(t);
 if(/^(assisted\s+)?(pull-?ups?|chin-?ups?|dips?|push-?ups?)\b/i.test(s)&&/\bsets?\b/i.test(s))return 'reps';
 if(/\b\d+\s*x\s*\d+/i.test(s)&&!/\b\d+\s*x\s*\d+\s*(s\b|sec|min)/i.test(s)&&!/(jump|bound|hop|shuttle|sprint|run|drill|plank|hold|hanging)/i.test(s))return 'kg';
 return null;}
+// ---- Metrics: each measurable exercise gets one or more boxes. Values are saved in task_progress
+// (weight_kg, reps, distance_km, time_s) with task_label = metricKey(text), so results can be compared
+// across days and cycles ("Last" and "Best").
+const FIELDS={weight_kg:{u:'kg',step:'0.5',ph:'kg',better:1,lbl:'Weight in kg'},reps:{u:'reps',step:'1',ph:'reps',better:1,lbl:'Best set in reps'},distance_km:{u:'km',step:'0.01',ph:'km',better:1,lbl:'Distance in km'},time_s:{u:'s',step:'0.01',ph:'sec',better:-1,lbl:'Time in seconds'}};
+function metricFields(t){const s=String(t);
+if(/\bsled\b/i.test(s)||/\(log weight and time\)/i.test(s))return ['weight_kg','time_s'];
+if(/\(log time\)/i.test(s))return ['time_s'];
+if(/\brun\b/i.test(s)&&/\d+\s*min\b/i.test(s)&&!/(jog|warm|cool)/i.test(s))return ['distance_km'];
+const k=metricKind(s);if(k==='kg')return ['weight_kg'];if(k==='reps')return ['reps'];return [];}
+function metricKey(t){let s=String(t).toLowerCase().replace(/\([^)]*\)/g,' ');
+s=s.replace(/\b\d+\s*x\s*\d+(-\d+)?\b/g,' ').replace(/@\s*rpe\s*\d+/g,' ').replace(/\b\d+\s*sets?\b/g,' ').replace(/\/(leg|arm|side)\b/g,' ');
+return s.replace(/[,;]/g,' ').replace(/\s+/g,' ').trim();}
+function runMinutes(t){const m=String(t).match(/(\d+)\s*min\b/i);return m?+m[1]:null;}
+function fmtPace(min,km){if(!min||!km)return '';const p=min/km;const mm=Math.floor(p),ss=Math.round((p-mm)*60);return (ss===60?(mm+1)+':00':mm+':'+String(ss).padStart(2,'0'))+'/km';}
 function tpRow(n,s,i){return S.task_progress.find(t=>t.day_num===n&&t.session===s&&t.task_index===i);}
-function metricVal(n,s,i,kind){const r=tpRow(n,s,i);if(!r)return '';const v=kind==='kg'?r.weight_kg:r.reps;return v==null?'':v;}
+function metricVal(n,s,i,f){const r=tpRow(n,s,i);if(!r||r[f]==null)return '';return +r[f];}
+function fmtVal(f,v){if(v==null||v==='')return '';v=+v;return (f==='time_s'?(Math.round(v*100)/100)+' s':f==='distance_km'?(Math.round(v*100)/100)+' km':v+' '+FIELDS[f].u);}
+function cycleNum(){return S.cycle?S.cycle.cycle_num:0;}
+// Compare with every other logged result of the same exercise (other days and other cycles).
+function history(key,n,f){const cur=cycleNum();const rows=(S.records||[]).filter(r=>r.task_label===key&&r[f]!=null&&!(r.cycle_id===cid()&&r.day_num===n));
+if(!rows.length)return null;const better=FIELDS[f].better;
+let best=rows[0];rows.forEach(r=>{if(better>0?+r[f]>+best[f]:+r[f]<+best[f])best=r;});
+const earlier=rows.filter(r=>r.cycle_num<cur||(r.cycle_num===cur&&r.day_num<n)).sort((a,b)=>a.cycle_num-b.cycle_num||a.day_num-b.day_num);
+const last=earlier.length?earlier[earlier.length-1]:null;return {best:+best[f],last:last?+last[f]:null};}
+function recHTML(n,s,x){const fs=metricFields(x.t);if(!fs.length)return '';const key=metricKey(x.t);const parts=[];let pr=false;
+fs.forEach(f=>{const h=history(key,n,f);const v=metricVal(n,s,x.i,f);
+if(f==='distance_km'&&v!==''){const p=fmtPace(runMinutes(x.t),v);if(p)parts.push('Pace '+p);}
+if(h){if(h.last!=null&&h.last!==h.best)parts.push('Last '+fmtVal(f,h.last));parts.push('Best '+fmtVal(f,h.best));
+if(v!==''&&(FIELDS[f].better>0?v>h.best:v<h.best))pr=true;}});
+if(!parts.length&&!pr)return '<div class="rec">First time: set your benchmark</div>';
+return '<div class="rec">'+(pr?'<b class="pr">New best!</b> ':'')+parts.join(' · ')+'</div>';}
 const _mTimers={};
-function setMetric(n,s,i,kind,raw){const v=raw===''?null:parseFloat(raw);if(raw!==''&&isNaN(v))return;let r=tpRow(n,s,i);if(!r){r={day_num:n,session:s,task_index:i,done:false};S.task_progress.push(r);}
-if(kind==='kg')r.weight_kg=v;else r.reps=v==null?null:Math.round(v);
-const k=n+s+i;clearTimeout(_mTimers[k]);_mTimers[k]=setTimeout(()=>{const b={cycle_id:cid(),day_num:n,session:s,task_index:i};if(kind==='kg')b.weight_kg=r.weight_kg;else b.reps=r.reps;api('/api/task',b).then(x=>{if(x&&x.ok)toast('Saved');else toast('Save failed');}).catch(()=>toast('Save failed'));},700);}
-function metricHTML(n,s,x){const kind=metricKind(x.t);if(!kind)return '';return '<div class="metric"><input type="number" inputmode="decimal" min="0" step="'+(kind==='kg'?'0.5':'1')+'" data-metric="'+kind+'" data-sess="'+s+'" data-i="'+x.i+'" value="'+esc(String(metricVal(n,s,x.i,kind)))+'" placeholder="'+(kind==='kg'?'max':'best')+'" aria-label="'+(kind==='kg'?'Max weight in kg':'Best set in reps')+'"><span>'+(kind==='kg'?'kg':'reps')+'</span></div>';}
-function taskRow(n,sess,x,extraCls,pill){const dn=taskDone(n,sess,x.i);return '<div class="task'+(dn?' done':'')+(extraCls?' '+extraCls:'')+'" data-sess="'+sess+'" data-i="'+x.i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(x.t)+'</div>'+(pill?'<span class="dur">'+pill+'</span>':'')+metricHTML(n,sess,x)+'</div>';}
+function setMetric(n,s,i,f,raw,label){const v=raw===''?null:parseFloat(raw);if(raw!==''&&(isNaN(v)||v<0))return;let r=tpRow(n,s,i);if(!r){r={day_num:n,session:s,task_index:i,done:false};S.task_progress.push(r);}
+r[f]=(f==='reps'&&v!=null)?Math.round(v):v;
+const key=metricKey(label);
+// keep the in-memory records in sync so Last/Best and "New best!" update immediately
+S.records=S.records||[];let rec=S.records.find(q=>q.cycle_id===cid()&&q.day_num===n&&q.session===s&&q.task_index===i);if(!rec){rec={cycle_id:cid(),cycle_num:cycleNum(),day_num:n,session:s,task_index:i};S.records.push(rec);}rec.task_label=key;rec[f]=r[f];
+const k=n+s+i+f;clearTimeout(_mTimers[k]);_mTimers[k]=setTimeout(()=>{const b={cycle_id:cid(),day_num:n,session:s,task_index:i,task_label:key};b[f]=r[f];api('/api/task',b).then(x=>{if(x&&x.ok)toast('Saved');else toast('Save failed');}).catch(()=>toast('Save failed'));},700);}
+function metricHTML(n,s,x){const fs=metricFields(x.t);if(!fs.length)return '';let h='<div class="metric">';fs.forEach(f=>{const F=FIELDS[f];h+='<label class="mf"><input type="number" inputmode="decimal" min="0" step="'+F.step+'" data-metric="'+f+'" data-sess="'+s+'" data-i="'+x.i+'" value="'+esc(String(metricVal(n,s,x.i,f)))+'" placeholder="'+F.ph+'" aria-label="'+F.lbl+'"><span>'+F.u+'</span></label>';});return h+'</div>';}
+function taskRow(n,sess,x,extraCls,pill){const dn=taskDone(n,sess,x.i);return '<div class="task'+(dn?' done':'')+(extraCls?' '+extraCls:'')+'" data-sess="'+sess+'" data-i="'+x.i+'"><div class="box">'+(dn?'✓':'')+'</div><div class="label">'+esc(x.t)+recHTML(n,sess,x)+'</div>'+(pill?'<span class="dur">'+pill+'</span>':'')+metricHTML(n,sess,x)+'</div>';}
 
 // ---- Circuits: a session with a "Repeat circuit xN" line becomes a timed circuit.
 function stationSecs(t){const s=String(t);let m=s.match(/(\d+)\s*s(?:ec)?\b(\s*\/\s*side)?/i);if(m)return (+m[1])*(m[2]?2:1);m=s.match(/(\d+)\s*min\b/i);if(m&&!/rest/i.test(s))return (+m[1])*60;return null;}
@@ -307,7 +351,7 @@ if(!info){tasks.forEach(x=>{h+=taskRow(n,sess,x);});h+='</div>';return h;}
 if(!CT||CT.key!==ctKey(n,sess)){if(CT&&CT.running){/* keep the running circuit of another day alive */}else CT=ctFresh(n,sess,info);}
 info.before.forEach(x=>{h+=taskRow(n,sess,x);});
 h+='<div class="circuit" id="ct-'+sess+'"><div class="ct-top"><span class="ct-phase">Ready</span><span class="ct-round"></span></div><div class="ct-time">0:00</div><div class="ct-name"></div><div class="ct-next"></div><div class="ct-btns"><button data-ct="play" class="go">Start</button><button data-ct="next">Next</button><button data-ct="reset">Reset</button></div></div>';
-info.stations.forEach(st=>{h+=taskRow(n,sess,{i:st.i,t:st.t},'station',st.secs?fmt(st.secs):'reps');});
+info.stations.forEach(st=>{h+=taskRow(n,sess,{i:st.i,t:st.t},'station',st.secs?fmt(st.secs):(metricFields(st.t).length?'':'reps'));});
 h+=taskRow(n,sess,info.repeat,'',info.rounds+' rounds · '+fmt(info.rest)+' rest');
 info.after.forEach(x=>{h+=taskRow(n,sess,x);});
 h+='</div>';
@@ -323,7 +367,7 @@ el.onclick=(e)=>{if(e.target.closest('.metric'))return;const s=el.dataset.sess;c
 });
 document.querySelectorAll('#amCard [data-metric],#pmCard [data-metric]').forEach(inp=>{
 inp.onclick=e=>e.stopPropagation();
-inp.oninput=()=>setMetric(cur,inp.dataset.sess,+inp.dataset.i,inp.dataset.metric,inp.value.trim());
+inp.oninput=()=>{const ss=inp.dataset.sess,ii=+inp.dataset.i;const d=dayData(cur);const t=parseTasks(ss==='am'?d.am_tasks:d.pm_tasks)[ii];setMetric(cur,ss,ii,inp.dataset.metric,inp.value.trim(),stripTag(t||''));const row=inp.closest('.task');const lb=row&&row.querySelector('.label');if(lb){const old=lb.querySelector('.rec');const tmp=document.createElement('div');tmp.innerHTML=recHTML(cur,ss,{t:stripTag(t||''),i:ii});const nw=tmp.firstChild;if(old&&nw)old.replaceWith(nw);else if(nw)lb.appendChild(nw);}};
 });
 document.querySelectorAll('.circuit [data-ct]').forEach(b=>{b.onclick=e=>{e.stopPropagation();const a=b.dataset.ct;if(CT&&CT.key!==ctKey(cur,b.closest('.circuit').id.slice(3))){if(CT.running){toast('Another circuit is running');return;}CT=null;renderToday();return;}if(a==='play')ctPlay();else if(a==='next')ctNext();else ctReset();};});
 if(CT&&CT.n===cur)ctPaint();
@@ -442,8 +486,12 @@ $('sBreak').innerHTML=h;
 let hh='';
 if(!S.history||!S.history.length){hh='<div class="sline"><span style="color:var(--muted)">No finished cycles yet</span><span></span></div>';}
 else{S.history.forEach(c=>{const sm=c.summary||{};hh+='<div class="sline"><span>Cycle '+c.cycle_num+' · '+String(c.start_date||'').slice(0,10)+'</span><span>'+(sm.pct!=null?sm.pct+'%':'—')+'</span></div>';});}
-$('histList').innerHTML=hh;renderNutriReport();
+$('histList').innerHTML=hh;renderRecords();renderNutriReport();
 }
+function renderRecords(){const el=$('prList');if(!el)return;const by={};(S.records||[]).forEach(r=>{['weight_kg','reps','distance_km','time_s'].forEach(f=>{if(r[f]==null)return;const k=r.task_label+'|'+f;const b=by[k];if(!b||(FIELDS[f].better>0?+r[f]>+b.v:+r[f]<+b.v))by[k]={label:r.task_label,f,v:+r[f],c:r.cycle_num,d:r.day_num};});});
+const list=Object.values(by).sort((a,b)=>a.label.localeCompare(b.label));
+if(!list.length){el.innerHTML='<div class="sline"><span style="color:var(--muted)">Log weights, reps, km or times on your exercises to see your records here</span><span></span></div>';return;}
+el.innerHTML=list.map(p=>'<div class="prrow"><span>'+esc(p.label.charAt(0).toUpperCase()+p.label.slice(1))+'</span><span><b>'+fmtVal(p.f,p.v)+'</b> · cycle '+p.c+', day '+p.d+'</span></div>').join('');}
 function renderNutriReport(){const el=$('nutriReport');if(!el)return;const rows=S.nutrition||[];const logged=rows.filter(r=>r.protein_g!=null||r.carbs_g!=null||r.fats_g!=null||r.water_ml!=null);if(!logged.length){el.innerHTML='<div class="sline"><span style="color:var(--muted)">No nutrition logged yet</span><span></span></div>';return;}const avg=k=>{const vals=logged.map(r=>r[k]!=null?+r[k]:null).filter(x=>x!=null);if(!vals.length)return null;return vals.reduce((a,b)=>a+b,0)/vals.length;};const hit=(k,g)=>logged.filter(r=>r[k]!=null&&+r[k]>=g*0.9).length;const defs=[{k:'protein_g',lbl:'Protein',unit:'g'},{k:'carbs_g',lbl:'Carbs',unit:'g'},{k:'fats_g',lbl:'Fats',unit:'g'},{k:'water_ml',lbl:'Water',unit:'ml'},{k:'calories',lbl:'Calories',unit:'kcal'}];let h='';defs.forEach(d=>{const a=avg(d.k);const g=goalFor(d.k);const av=a==null?'—':Math.round(a)+' '+d.unit;const hc=a==null?'':' · '+hit(d.k,g)+'/'+logged.length+' days hit';h+='<div class="sline"><span>'+d.lbl+' (avg)</span><span>'+av+' / '+Math.round(g)+' '+d.unit+hc+'</span></div>';});h+='<div class="sline"><span>Days logged</span><span>'+logged.length+'</span></div>';el.innerHTML=h;}function showTab(t){
 ['today','plan','fuel','summary'].forEach(x=>$(x).classList.toggle('active',t===x));
 $('tabToday').classList.toggle('active',t==='today');
