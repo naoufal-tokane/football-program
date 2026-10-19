@@ -26,7 +26,7 @@ textarea{resize:vertical}
 .chips input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
 .chips input:focus-visible+span{outline:2px solid var(--accent-bright);outline-offset:2px}
 .chips.days span{min-width:52px;text-align:center}
-.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.hp{position:absolute!important;top:0;width:1px!important;height:1px!important;padding:0!important;border:0!important;opacity:0;overflow:hidden;clip-path:inset(50%);pointer-events:none}
 button{font-family:inherit;cursor:pointer}
 .primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:700}
 .primary:disabled{opacity:.6}
@@ -78,7 +78,7 @@ input.bad{border-color:#f87171!important;animation:shake .3s}
 .live{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:10px;padding:9px 12px;font-size:13px;margin:-4px 0 14px;animation:fadeDown .25s ease}
 .tag{font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;margin-left:6px}
 .tag.ok{background:rgba(34,197,94,.18);color:#4ade80}.tag.warn{background:rgba(250,204,21,.15);color:#facc15}.tag.bad{background:rgba(248,113,113,.18);color:#f87171}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--border) var(--pct,50%));outline:none;margin:8px 0 4px;padding:0;border:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--border) var(--pct,50%))!important;outline:none;margin:8px 0 4px;padding:0!important;border:none!important}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:4px solid var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:4px solid var(--accent);cursor:pointer}
 .ticks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);padding:0 4px}
@@ -106,3 +106,14 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .done:not([hidden]){animation:fadeDown .4s ease}
 .check{animation:pop .45s cubic-bezier(.3,1.6,.6,1)}
 @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+/* ---- language toggle + RTL ---- */
+.header{position:sticky}
+.langbtn{position:absolute;top:14px;inset-inline-end:16px;background:#0e141b;color:var(--am);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:700}
+[dir=rtl] body{font-family:'Segoe UI',Tahoma,'Noto Sans Arabic','Geeza Pro',Arial,sans-serif}
+[dir=rtl] .field>label em{margin-left:0;margin-right:6px}
+[dir=rtl] .field>label .val{float:left}
+[dir=rtl] .kv span:last-child{text-align:left}
+[dir=rtl] input[type=range],[dir=rtl] .ticks{direction:ltr}
+[dir=rtl] input[type=number],[dir=rtl] input[type=email]{direction:ltr;text-align:right}
+[dir=rtl] .card h2,[dir=rtl] .revsec h4{letter-spacing:0}
+[dir=rtl] pre{direction:rtl;text-align:right}

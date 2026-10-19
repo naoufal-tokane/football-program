@@ -10,6 +10,7 @@ window.INTAKE = (function () {
     ['Training', [
       ['sport', 'Sport / context'], ['sport_other', 'Sport (other)'],
       ['days_per_week', 'Days per week'], ['session_minutes', 'Session length (min)'],
+      ['two_a_day', 'Trains twice a day'], ['two_a_day_days', 'Days per week training twice'],
       ['has_commitments', 'Fixed commitments'], ['commitment_days', 'Commitment days'], ['commitment_details', 'Commitment details'],
       ['equipment', 'Equipment'], ['experience', 'Experience level'],
       ['injuries', 'Injuries / limitations / exercises to avoid'],
@@ -27,12 +28,13 @@ window.INTAKE = (function () {
   const fmt = (v) => Array.isArray(v) ? v.join(', ') : String(v);
   const empty = (v) => v == null || v === '' || (Array.isArray(v) && !v.length);
 
-  function toText(a, meta) {
-    const out = ['ATHLETE INTAKE FORM'];
-    if (meta && meta.created_at) out.push('Submitted: ' + new Date(meta.created_at).toLocaleString());
+  function toText(a, meta, tr) {
+    tr = tr || ((x) => x);
+    const out = [tr('ATHLETE INTAKE FORM')];
+    if (meta && meta.created_at) out.push(tr('Submitted') + ': ' + new Date(meta.created_at).toLocaleString());
     for (const [title, fields] of SECTIONS) {
-      const lines = fields.filter(([k]) => !empty(a[k])).map(([k, l]) => '- ' + l + ': ' + fmt(a[k]));
-      if (lines.length) out.push('', title.toUpperCase(), ...lines);
+      const lines = fields.filter(([k]) => !empty(a[k])).map(([k, l]) => '- ' + tr(l) + ': ' + fmt([].concat(a[k]).map(tr)));
+      if (lines.length) out.push('', tr(title).toUpperCase(), ...lines);
     }
     return out.join('\n');
   }

@@ -9,8 +9,9 @@
 </head>
 <body>
 <header class="header">
+  <button type="button" class="langbtn" id="langBtn" data-dyn>الدارجة</button>
   <h1>Athlete Intake</h1>
-  <p id="stepHint">Step 1 of 4 · About you</p>
+  <p id="stepHint" data-dyn>Step 1 of 4 · About you</p>
   <div class="progress"><div class="bar" id="progBar"></div></div>
   <div class="steps" id="stepDots">
     <button type="button" data-go="0" class="on">About</button>
@@ -41,7 +42,7 @@
       <div class="field"><label for="height_cm">Height (cm)</label><input id="height_cm" name="height_cm" type="number" inputmode="decimal" step="0.1" placeholder="178"/></div>
       <div class="field"><label for="weight_kg">Current weight (kg)</label><input id="weight_kg" name="weight_kg" type="number" inputmode="decimal" step="0.1" placeholder="75"/></div>
     </div>
-    <div class="live" id="bmiBox" hidden></div>
+    <div class="live" id="bmiBox" data-dyn hidden></div>
 
     <div class="field"><label>Main goal <em>select all that apply</em></label>
       <div class="chips multi">
@@ -59,7 +60,7 @@
       <div class="field"><label for="target_weight_kg">Target weight (kg)</label><input id="target_weight_kg" name="target_weight_kg" type="number" inputmode="decimal" step="0.1" placeholder="optional"/></div>
       <div class="field"><label for="timeline">Timeline</label><input id="timeline" name="timeline" placeholder="e.g. 12 weeks, before season"/></div>
     </div>
-    <div class="live" id="targetBox" hidden></div>
+    <div class="live" id="targetBox" data-dyn hidden></div>
   </section>
 
   <!-- STEP 2: TRAINING -->
@@ -77,16 +78,36 @@
       <input name="sport_other" class="other" data-for="sport" placeholder="Which sport / context?" hidden/>
     </div>
 
-    <div class="field"><label>Days per week <b class="val" id="daysVal">4 days</b></label>
+    <div class="field"><label>Days per week <b class="val" id="daysVal" data-dyn>4 days</b></label>
       <input type="range" name="days_per_week" id="days_per_week" min="1" max="7" value="4"/>
       <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
     </div>
 
-    <div class="field"><label>Time per session <b class="val" id="minVal">60 min</b></label>
+    <div class="field"><label>Time per session <b class="val" id="minVal" data-dyn>60 min</b></label>
       <input type="range" name="session_minutes" id="session_minutes" min="20" max="150" step="5" value="60"/>
       <div class="ticks"><span>20</span><span>60</span><span>105</span><span>150</span></div>
     </div>
-    <div class="live" id="volumeBox"></div>
+    <div class="live" id="volumeBox" data-dyn></div>
+
+    <div class="field"><label>Do you train twice a day?</label>
+      <div class="chips">
+        <label><input type="radio" name="two_a_day" value="Yes"><span>Yes</span></label>
+        <label><input type="radio" name="two_a_day" value="No"><span>No</span></label>
+      </div>
+    </div>
+    <div id="twiceBox" class="reveal" hidden>
+      <div class="field"><label>How many days per week do you train twice?</label>
+        <div class="chips days">
+          <label><input type="radio" name="two_a_day_days" value="1"><span>1</span></label>
+          <label><input type="radio" name="two_a_day_days" value="2"><span>2</span></label>
+          <label><input type="radio" name="two_a_day_days" value="3"><span>3</span></label>
+          <label><input type="radio" name="two_a_day_days" value="4"><span>4</span></label>
+          <label><input type="radio" name="two_a_day_days" value="5"><span>5</span></label>
+          <label><input type="radio" name="two_a_day_days" value="6"><span>6</span></label>
+          <label><input type="radio" name="two_a_day_days" value="7"><span>7</span></label>
+        </div>
+      </div>
+    </div>
 
     <div class="field"><label>Team sessions or fixed commitments to build around?</label>
       <div class="chips">
@@ -157,7 +178,7 @@
         <div class="field"><label for="calories">Calories (auto)</label><input id="calories" name="calories" type="number" readonly placeholder="auto"/></div>
       </div>
       <div class="macrobar" id="macroBar" hidden><i class="p"></i><i class="c"></i><i class="f"></i></div>
-      <div class="macrolegend" id="macroLegend"></div>
+      <div class="macrolegend" id="macroLegend" data-dyn></div>
     </div>
 
     <div id="calcTargets" class="reveal" hidden>
@@ -185,9 +206,9 @@
       <input name="diet_other" class="mt" placeholder="Allergies or other restrictions"/>
     </div>
 
-    <div class="field"><label>Water target <b class="val" id="waterVal">3.0 L</b></label>
+    <div class="field"><label>Water target <b class="val" id="waterVal" data-dyn>3.0 L</b></label>
       <input type="range" name="water_ml" id="water_ml" min="1500" max="5000" step="250" value="3000"/>
-      <div class="glasses" id="glasses"></div>
+      <div class="glasses" id="glasses" data-dyn></div>
     </div>
   </section>
 
@@ -195,16 +216,16 @@
   <section class="card step" data-step="3">
     <h2><span class="num">4</span>Review</h2>
     <p class="muted">Check your answers. Tap a section to edit it.</p>
-    <div id="review"></div>
+    <div id="review" data-dyn></div>
   </section>
 
-  <div class="err" id="formErr"></div>
+  <div class="err" id="formErr" data-dyn></div>
   <div class="nav">
     <button type="button" class="ghost" id="backBtn" hidden>← Back</button>
     <button type="button" class="primary" id="nextBtn">Next →</button>
-    <button type="submit" class="primary" id="submitBtn" hidden>Submit</button>
+    <button type="submit" class="primary" id="submitBtn" data-dyn hidden>Submit</button>
   </div>
-  <p class="saved" id="savedNote"></p>
+  <p class="saved" id="savedNote" data-dyn></p>
 </form>
 
 <section id="doneBox" class="card done" hidden>
@@ -212,18 +233,20 @@
   <h2>Thanks, your answers were sent.</h2>
   <p class="muted">Keep a copy for yourself:</p>
   <div class="row">
-    <button class="ghost" id="copyBtn">Copy answers</button>
+    <button class="ghost" id="copyBtn" data-dyn>Copy answers</button>
     <button class="ghost" id="dlBtn">Download JSON</button>
   </div>
-  <pre id="summary"></pre>
+  <pre id="summary" data-dyn></pre>
   <button class="link" id="againBtn">Fill in another form</button>
 </section>
 </main>
 
 <script src="/intake-common.js"></script>
+<script src="/intake-i18n.js"></script>
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
+  const t = I18N.t, F = I18N.f;
   const form = $('intakeForm');
   const steps = [...document.querySelectorAll('.step')];
   const NAMES = ['About you', 'Training', 'Nutrition', 'Review'];
@@ -245,6 +268,7 @@
       if (val !== '') a[k] = val;
     }
     document.querySelectorAll('.other[hidden]').forEach((i) => delete a[i.name]);
+    if (a.two_a_day !== 'Yes') delete a.two_a_day_days;
     if (a.has_commitments !== 'Yes') { delete a.commitment_days; delete a.commitment_details; }
     if (a.targets_mode !== 'I have my own targets') ['protein_g', 'carbs_g', 'fats_g', 'calories'].forEach((k) => delete a[k]);
     if (a.targets_mode !== 'Calculate for me') delete a.activity_level;
@@ -257,16 +281,17 @@
     document.querySelectorAll('.other').forEach((inp) => { inp.hidden = !checked(inp.dataset.for).includes('Other'); });
     const c = checked('has_commitments')[0];
     $('commitBox').hidden = c !== 'Yes';
-    const t = checked('targets_mode')[0];
-    $('ownTargets').hidden = t !== 'I have my own targets';
-    $('calcTargets').hidden = t !== 'Calculate for me';
+    $('twiceBox').hidden = checked('two_a_day')[0] !== 'Yes';
+    const tm = checked('targets_mode')[0];
+    $('ownTargets').hidden = tm !== 'I have my own targets';
+    $('calcTargets').hidden = tm !== 'Calculate for me';
 
     // BMI
     const h = num('height_cm') / 100, w = num('weight_kg');
     if (h > 1 && w > 20) {
       const bmi = w / (h * h);
       const cat = bmi < 18.5 ? ['Underweight', 'warn'] : bmi < 25 ? ['Normal range', 'ok'] : bmi < 30 ? ['Above normal', 'warn'] : ['High', 'bad'];
-      $('bmiBox').innerHTML = 'BMI <b>' + bmi.toFixed(1) + '</b> <span class="tag ' + cat[1] + '">' + cat[0] + '</span>';
+      $('bmiBox').innerHTML = 'BMI <b>' + bmi.toFixed(1) + '</b> <span class="tag ' + cat[1] + '">' + t(cat[0]) + '</span>';
       $('bmiBox').hidden = false;
     } else $('bmiBox').hidden = true;
 
@@ -274,24 +299,24 @@
     const tw = num('target_weight_kg');
     if (w > 20 && tw > 20) {
       const d = tw - w;
-      $('targetBox').innerHTML = Math.abs(d) < 0.05 ? 'Target equals current weight' :
-        '<b>' + (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + ' kg</b> ' + (d > 0 ? 'to gain' : 'to lose');
+      $('targetBox').innerHTML = Math.abs(d) < 0.05 ? t('Target equals current weight') :
+        '<b>' + (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + ' kg</b> ' + t(d > 0 ? 'to gain' : 'to lose');
       $('targetBox').hidden = false;
     } else $('targetBox').hidden = true;
 
     // Sliders
     const days = +$('days_per_week').value, mins = +$('session_minutes').value;
-    $('daysVal').textContent = days + (days === 1 ? ' day' : ' days');
-    $('minVal').textContent = mins >= 150 ? '150+ min' : mins + ' min';
+    $('daysVal').textContent = F.days(days);
+    $('minVal').textContent = F.mins(mins);
     const tot = days * mins;
-    $('volumeBox').innerHTML = '≈ <b>' + (tot / 60).toFixed(1).replace('.0', '') + ' h</b> of training per week';
+    $('volumeBox').innerHTML = F.volume((tot / 60).toFixed(1).replace('.0', ''));
     fill($('days_per_week')); fill($('session_minutes')); fill($('water_ml'));
 
     // Water
     const ml = +$('water_ml').value;
-    $('waterVal').textContent = parseFloat((ml / 1000).toFixed(2)).toString() + ' L';
+    $('waterVal').textContent = F.water(parseFloat((ml / 1000).toFixed(2)));
     const n = Math.round(ml / 250);
-    $('glasses').innerHTML = '💧'.repeat(n) + '<small>' + n + ' glasses of 250 ml</small>';
+    $('glasses').innerHTML = '💧'.repeat(n) + '<small>' + F.glasses(n) + '</small>';
 
     // Macros
     const p = num('protein_g'), cb = num('carbs_g'), f = num('fats_g');
@@ -302,8 +327,8 @@
       const bar = $('macroBar').children;
       bar[0].style.width = pc(p * 4) + '%'; bar[1].style.width = pc(cb * 4) + '%'; bar[2].style.width = pc(f * 9) + '%';
       $('macroBar').hidden = false;
-      $('macroLegend').innerHTML = '<span class="p">Protein ' + Math.round(pc(p * 4)) + '%</span><span class="c">Carbs ' + Math.round(pc(cb * 4)) + '%</span><span class="f">Fats ' + Math.round(pc(f * 9)) + '%</span>' +
-        (w > 20 && p ? '<span>' + (p / w).toFixed(1) + ' g protein / kg</span>' : '');
+      $('macroLegend').innerHTML = '<span class="p">' + t('Protein') + ' ' + Math.round(pc(p * 4)) + '%</span><span class="c">' + t('Carbs') + ' ' + Math.round(pc(cb * 4)) + '%</span><span class="f">' + t('Fats') + ' ' + Math.round(pc(f * 9)) + '%</span>' +
+        (w > 20 && p ? '<span>' + (p / w).toFixed(1) + ' ' + t('g protein / kg') + '</span>' : '');
     } else { $('macroBar').hidden = true; $('macroLegend').innerHTML = ''; }
   }
   function fill(r) { const pct = (r.value - r.min) / (r.max - r.min) * 100; r.style.setProperty('--pct', pct + '%'); }
@@ -314,7 +339,8 @@
     steps.forEach((s, k) => s.classList.toggle('active', k === cur));
     document.querySelectorAll('#stepDots button').forEach((b, k) => { b.classList.toggle('on', k === cur); b.classList.toggle('done', k < cur); });
     $('progBar').style.width = ((cur + 1) / steps.length * 100) + '%';
-    $('stepHint').textContent = 'Step ' + (cur + 1) + ' of ' + steps.length + ' · ' + NAMES[cur];
+    $('stepHint').textContent = F.step(cur + 1, steps.length, NAMES[cur]);
+    $('submitBtn').textContent = t('Submit');
     $('backBtn').hidden = cur === 0;
     $('nextBtn').hidden = cur === steps.length - 1;
     $('submitBtn').hidden = cur !== steps.length - 1;
@@ -325,7 +351,7 @@
   function valid(i) { return !(i === 0 && !$('full_name').value.trim()); }
   function fail(k) {
     if (k !== cur) show(k);
-    $('formErr').textContent = 'Please enter a name to continue.';
+    $('formErr').textContent = t('Please enter a name to continue.');
     $('full_name').classList.add('bad'); $('full_name').focus();
   }
   function go(i) { if (i > cur) { for (let k = 0; k < i; k++) if (!valid(k)) return fail(k); } show(i); }
@@ -341,8 +367,8 @@
     const a = collect();
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     $('review').innerHTML = INTAKE.SECTIONS.map(([title, fields], i) => {
-      const rows = fields.filter(([k]) => !INTAKE.empty(a[k])).map(([k, l]) => '<div class="kv"><span>' + esc(l) + '</span><span>' + esc(INTAKE.fmt(a[k])) + '</span></div>').join('');
-      return '<div class="revsec" data-go="' + i + '"><h4>' + esc(title) + ' <small>Edit</small></h4>' + (rows || '<div class="muted">Nothing filled in</div>') + '</div>';
+      const rows = fields.filter(([k]) => !INTAKE.empty(a[k])).map(([k, l]) => '<div class="kv"><span>' + esc(t(l)) + '</span><span>' + esc(INTAKE.fmt([].concat(a[k]).map(t))) + '</span></div>').join('');
+      return '<div class="revsec" data-go="' + i + '"><h4>' + esc(t(title)) + ' <small>' + t('Edit') + '</small></h4>' + (rows || '<div class="muted">' + t('Nothing filled in') + '</div>') + '</div>';
     }).join('');
     $('review').querySelectorAll('.revsec').forEach((el) => (el.onclick = () => show(+el.dataset.go)));
   }
@@ -351,7 +377,7 @@
   function saveDraft() {
     try {
       localStorage.setItem(DRAFT, JSON.stringify(collectRaw()));
-      $('savedNote').textContent = 'Draft saved on this device';
+      $('savedNote').textContent = t('Draft saved on this device');
     } catch (e) {}
   }
   function collectRaw() {
@@ -371,12 +397,12 @@
       if (el.type === 'checkbox' || el.type === 'radio') el.checked = o[el.name].includes(el.value);
       else el.value = o[el.name];
     });
-    $('savedNote').textContent = 'Restored your saved draft';
+    $('savedNote').textContent = t('Restored your saved draft');
   }
   function clearDraft() { try { localStorage.removeItem(DRAFT); } catch (e) {} $('savedNote').textContent = ''; }
 
-  let t;
-  form.addEventListener('input', () => { live(); clearTimeout(t); t = setTimeout(saveDraft, 400); });
+  let saveTimer;
+  form.addEventListener('input', () => { live(); clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 400); });
   form.addEventListener('change', (e) => {
     if (e.target.name === 'diet') {
       const boxes = form.querySelectorAll('input[name="diet"]');
@@ -398,28 +424,28 @@
     if (!valid(0)) return fail(0);
     const answers = collect();
     const btn = $('submitBtn');
-    btn.disabled = true; btn.textContent = 'Sending…';
+    btn.disabled = true; btn.textContent = t('Sending…');
     try {
       const r = await fetch('/api/intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answers, website: form.website.value }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'Something went wrong');
       last = { answers, created_at: d.created_at || new Date().toISOString() };
-      $('summary').textContent = INTAKE.toText(answers, last);
+      $('summary').textContent = INTAKE.toText(answers, last, t);
       clearDraft();
       form.hidden = true; document.querySelector('.steps').hidden = true; $('progBar').style.width = '100%';
-      $('stepHint').textContent = 'Done';
+      $('stepHint').textContent = t('Done');
       $('doneBox').hidden = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      $('formErr').textContent = err.message === 'Failed to fetch' ? 'Network error, please try again.' : err.message;
+      $('formErr').textContent = err.message === 'Failed to fetch' ? t('Network error, please try again.') : t(err.message);
     }
-    btn.disabled = false; btn.textContent = 'Submit';
+    btn.disabled = false; btn.textContent = t('Submit');
   });
 
   $('copyBtn').onclick = async () => {
     const ok = await INTAKE.copy($('summary').textContent);
-    $('copyBtn').textContent = ok ? 'Copied ✓' : 'Copy failed';
-    setTimeout(() => ($('copyBtn').textContent = 'Copy answers'), 1500);
+    $('copyBtn').textContent = t(ok ? 'Copied ✓' : 'Copy failed');
+    setTimeout(() => ($('copyBtn').textContent = t('Copy answers')), 1500);
   };
   $('dlBtn').onclick = () => last && INTAKE.download('intake-' + INTAKE.slug(last.answers.full_name) + '.json', JSON.stringify(last, null, 2));
   $('againBtn').onclick = () => {
@@ -428,7 +454,18 @@
   };
 
   window.addEventListener('pagehide', () => { if (!form.hidden) saveDraft(); });
-  loadDraft(); live(); show(0);
+  // ---------- language ----------
+  function applyLang() {
+    I18N.applyStatic(document.body);
+    $('langBtn').textContent = I18N.lang === 'ar' ? 'English' : 'الدارجة';
+    $('copyBtn').textContent = t('Copy answers');
+    if (last) $('summary').textContent = INTAKE.toText(last.answers, last, t);
+    live();
+    if (!form.hidden) show(cur); else $('stepHint').textContent = t('Done');
+  }
+  $('langBtn').onclick = () => { I18N.set(I18N.lang === 'ar' ? 'en' : 'ar'); $('savedNote').textContent = ''; applyLang(); };
+
+  loadDraft(); live(); show(0); applyLang();
 })();
 </script>
 </body>
