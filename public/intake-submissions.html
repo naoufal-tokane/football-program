@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0b0f14"/>
+<title>Intake Submissions</title>
+<link rel="stylesheet" href="/intake.css"/>
+</head>
+<body>
+<header class="header">
+  <h1>Intake submissions</h1>
+  <p><a href="/">← Back to program</a> · <a href="/intake" target="_blank">Open form</a> · <a href="#" id="shareLink">Copy form link</a></p>
+</header>
+<main class="wrap">
+  <div class="toolbar" id="toolbar" hidden>
+    <input id="search" placeholder="Search by name or contact"/>
+    <button class="ghost" id="dlAll">Download all (JSON)</button>
+  </div>
+  <div id="list"><div class="empty">Loading…</div></div>
+</main>
+
+<script src="/intake-common.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let rows = [];
+
+  $('shareLink').onclick = async (e) => {
+    e.preventDefault();
+    const ok = await INTAKE.copy(location.origin + '/intake');
+    e.target.textContent = ok ? 'Link copied ✓' : location.origin + '/intake';
+    setTimeout(() => (e.target.textContent = 'Copy form link'), 2000);
+  };
+
+  function card(r) {
+    const a = r.answers || {};
+    const bits = [a.goal === 'Other' ? a.goal_other : a.goal, a.sport === 'Other' ? a.sport_other : a.sport].filter(Boolean).join(' · ');
+    let body = '';
+    for (const [title, fields] of INTAKE.SECTIONS) {
+      const kv = fields.filter(([k]) => !INTAKE.empty(a[k])).map(([k, l]) => '<div class="kv"><span>' + esc(l) + '</span><span>' + esc(INTAKE.fmt(a[k])) + '</span></div>').join('');
+      if (kv) body += '<h4>' + esc(title) + '</h4>' + kv;
+    }
+    return '<details class="card sub" data-id="' + r.id + '"><summary><div><b>' + esc(r.full_name || 'Unnamed') + '</b><small>' +
+      esc(new Date(r.created_at).toLocaleString()) + (bits ? ' · ' + esc(bits) : '') + '</small></div><span class="muted">›</span></summary>' +
+      '<div class="body">' + body + '<div class="row" style="margin-top:14px"><button class="ghost" data-act="copy">Copy</button><button class="ghost" data-act="dl">Download JSON</button></div></div></details>';
+  }
+
+  function render() {
+    const q = $('search').value.trim().toLowerCase();
+    const shown = rows.filter((r) => !q || (r.full_name || '').toLowerCase().includes(q) || (r.contact || '').toLowerCase().includes(q));
+    $('list').innerHTML = shown.length ? shown.map(card).join('') : '<div class="empty">' + (rows.length ? 'No matches.' : 'No submissions yet. Share the form link to get started.') + '</div>';
+  }
+
+  $('list').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const r = rows.find((x) => String(x.id) === btn.closest('details').dataset.id);
+    if (btn.dataset.act === 'copy') {
+      const ok = await INTAKE.copy(INTAKE.toText(r.answers, r));
+      btn.textContent = ok ? 'Copied ✓' : 'Copy failed';
+      setTimeout(() => (btn.textContent = 'Copy'), 1500);
+    } else {
+      INTAKE.download('intake-' + INTAKE.slug(r.full_name) + '-' + r.id + '.json', JSON.stringify(r, null, 2));
+    }
+  });
+  $('search').addEventListener('input', render);
+  $('dlAll').onclick = () => INTAKE.download('intake-submissions.json', JSON.stringify(rows, null, 2));
+
+  fetch('/api/intake').then(async (r) => {
+    if (r.status === 401) {
+      $('list').innerHTML = '<div class="empty">Please <a href="/" style="color:var(--am)">log in</a> to see submissions.</div>';
+      return;
+    }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    rows = d.rows || [];
+    $('toolbar').hidden = false;
+    render();
+  }).catch((e) => { $('list').innerHTML = '<div class="empty">Could not load: ' + esc(e.message) + '</div>'; });
+})();
+</script>
+</body>
+</html>
